@@ -85,9 +85,37 @@ class ManusAPIClient {
 
     async handleInteraction(message, mode, taskId, flowId) {
         try {
+            console.log('🔗 handleInteraction 开始 - 参数:', { message, mode, taskId, flowId, currentSessionId });
+
             // 根据模式选择正确的API端点
             let endpoint;
             let requestBody;
+
+            // 获取聊天历史记录并转换为后端期望的格式
+            const rawChatHistory = chatHistoryManager.getHistory();
+
+            // 排除最后一条消息（用户刚刚发送的消息），因为已经通过prompt参数传递
+            const historyWithoutLastMessage = rawChatHistory.slice(0, -1);
+
+            const chatHistory = historyWithoutLastMessage.map(msg => {
+                // 将前端的type字段转换为后端期望的role字段
+                let role;
+                if (msg.type === 'user') {
+                    role = 'user';
+                } else if (msg.type === 'manus' || msg.type === 'thinking') {
+                    role = 'assistant';
+                } else {
+                    role = 'assistant'; // 默认为assistant
+                }
+
+                return {
+                    role: role,
+                    content: msg.content
+                };
+            });
+            console.log('📚 原始聊天历史记录:', rawChatHistory);
+            console.log('📚 排除最后一条消息后的历史记录:', historyWithoutLastMessage);
+            console.log('📚 转换后的聊天历史记录:', chatHistory);
 
             if (taskId) {
                 // 使用task API
@@ -95,20 +123,25 @@ class ManusAPIClient {
                 requestBody = {
                     prompt: message,
                     task_id: taskId,
-                    session_id: currentSessionId
+                    session_id: currentSessionId,
+                    chat_history: chatHistory
                 };
+                console.log('📝 使用task API:', endpoint, requestBody);
             } else if (flowId) {
                 // 使用flow API
                 endpoint = '/flow';
                 requestBody = {
                     prompt: message,
                     flow_id: flowId,
-                    session_id: currentSessionId
+                    session_id: currentSessionId,
+                    chat_history: chatHistory
                 };
+                console.log('📝 使用flow API:', endpoint, requestBody);
             } else {
                 throw new Error('No task or flow ID provided');
             }
 
+            console.log('🚀 发送请求到:', endpoint);
             const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: {
@@ -117,17 +150,22 @@ class ManusAPIClient {
                 body: JSON.stringify(requestBody)
             });
 
+            console.log('📡 收到响应:', response.status, response.statusText);
+
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorText = await response.text();
+                console.error('❌ 响应错误:', errorText);
+                throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
             }
 
             const data = await response.json();
+            console.log('✅ 响应数据:', data);
             return {
                 success: true,
                 data: data
             };
         } catch (error) {
-            console.error('处理交互失败:', error);
+            console.error('❌ 处理交互失败:', error);
             return {
                 success: false,
                 error: error.message
@@ -239,6 +277,26 @@ class ManusAPIClient {
                 onMessage(data);
             } catch (error) {
                 console.error('解析日志事件失败:', error);
+            }
+        });
+
+        eventSource.addEventListener('interaction', (event) => {
+            console.log('🔄 交互事件:', event.data);
+            try {
+                const data = JSON.parse(event.data);
+                onMessage(data);
+            } catch (error) {
+                console.error('解析交互事件失败:', error);
+            }
+        });
+
+        eventSource.addEventListener('ask_human', (event) => {
+            console.log('🤔 询问人类事件:', event.data);
+            try {
+                const data = JSON.parse(event.data);
+                onMessage(data);
+            } catch (error) {
+                console.error('解析询问人类事件失败:', error);
             }
         });
 
@@ -1206,7 +1264,13 @@ function initializeTaskPage(taskId = null, taskType = null) {
             currentTaskId = taskId;
             currentFlowId = null;
         }
-        console.log('任务页面初始化 - TaskId:', currentTaskId, 'FlowId:', currentFlowId, 'Type:', taskType);
+
+        // 确保有session ID
+        if (!currentSessionId) {
+            currentSessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        console.log('任务页面初始化 - TaskId:', currentTaskId, 'FlowId:', currentFlowId, 'Type:', taskType, 'SessionId:', currentSessionId);
     }
 
     // 初始化输入框自动调整高度
@@ -1364,6 +1428,11 @@ let chatHistoryManager = {
     // 设置当前聊天历史
     setHistory: function (history) {
         chatHistory = history || [];
+    },
+
+    // 获取当前聊天历史
+    getHistory: function () {
+        return chatHistory || [];
     }
 };
 
@@ -1372,17 +1441,26 @@ let chatHistoryManager = {
  */
 function handleTaskEvent(event) {
     console.log('收到任务事件:', event);
+    console.log('事件类型:', event.type, '事件内容:', event);
 
-    // 只处理think、interaction、complete事件
+    // 处理think、interaction、complete事件
+    // ask_human事件会触发interaction事件，所以不需要单独处理
     switch (event.type) {
         case 'think':
+            console.log('🎯 处理think事件');
             handleThinkEvent(event);
             break;
         case 'interaction':
+            console.log('🎯 处理interaction事件');
             handleInteractionEvent(event);
             break;
         case 'complete':
+            console.log('🎯 处理complete事件');
             handleCompleteEvent(event);
+            break;
+        case 'ask_human':
+            // ask_human事件会触发interaction事件，这里只记录日志
+            console.log('🤔 收到ask_human事件，等待interaction事件:', event);
             break;
         default:
             // 其他事件只在控制台记录，不显示在页面上
@@ -1452,11 +1530,15 @@ function handleInteractionEvent(event) {
     console.log('🔄 处理interaction事件:', event);
 
     if (event.result) {
+        console.log('✅ interaction事件内容:', event.result);
         // 直接添加到聊天信息框，不使用聊天气泡
         addChatMessage(event.result);
 
         // 保存到聊天历史
         chatHistoryManager.addMessage('manus', event.result);
+        console.log('✅ interaction事件内容已添加到聊天界面');
+    } else {
+        console.log('⚠️ interaction事件没有result字段:', event);
     }
 }
 
@@ -1807,7 +1889,14 @@ function addContentToCurrentMessage(content) {
 
     const responseContent = message.querySelector('.manus-response-content');
     if (responseContent) {
-        responseContent.innerHTML += content;
+        // 将换行符转换为HTML换行，并转义HTML特殊字符
+        const formattedContent = content
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\n/g, '<br>');
+
+        responseContent.innerHTML += formattedContent;
         scrollChatToBottom();
     }
 }
@@ -1888,6 +1977,29 @@ async function sendMessage() {
         setTimeout(() => {
             addChatMessage('收到您的消息，但当前没有活跃的任务。请返回主页面创建新任务。');
         }, 1000);
+    }
+}
+
+/**
+ * 测试API连接
+ */
+async function testAPIConnection() {
+    console.log('🧪 测试API连接...');
+    try {
+        const response = await fetch('/task', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                prompt: 'test',
+                task_id: 'test_id',
+                session_id: 'test_session'
+            })
+        });
+        console.log('🧪 API测试响应:', response.status, response.statusText);
+    } catch (error) {
+        console.error('🧪 API测试失败:', error);
     }
 }
 

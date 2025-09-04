@@ -2887,6 +2887,9 @@ body {
 .manus-response-content {
     margin: 0;
     padding: 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    line-height: 1.6;
 }
 
 .chat-message-content h1,

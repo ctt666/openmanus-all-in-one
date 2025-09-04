@@ -539,16 +539,18 @@ async def create_task(request_data: dict = Body(...)):
     if not prompt:
         raise HTTPException(status_code=400, detail="Prompt is required")
 
-    if task_id:
+    if task_id and task_manager.tasks[task_id].status == "running":
         success = await task_manager.handle_interaction(task_id, prompt)
         if not success:
             raise HTTPException(status_code=404, detail="Task not found")
         else:
             return {"status": "success", "message": "Interaction response received"}
 
-    task = task_manager.create_task(prompt, session_id, chat_history)
-    asyncio.create_task(run_task(task.id, prompt, session_id, chat_history))
-    return {"task_id": task.id}
+    if not task_id:
+        task_id = task_manager.create_task(prompt, session_id, chat_history).id
+
+    asyncio.create_task(run_task(task_id, prompt, session_id, chat_history))
+    return {"task_id": task_id}
 
 
 async def run_task(
@@ -577,9 +579,9 @@ async def run_task(
             # 特殊处理 ask_human 工具
             if tool == "ask_human":
                 inquire = input.get("inquire", "")
-                await task_manager.update_task_step(
-                    task_id, 0, f"Human interaction required: {inquire}", "interaction"
-                )
+                # await task_manager.update_task_step(
+                #     task_id, 0, f"Human interaction required: {inquire}", "interaction"
+                # )
 
                 # 等待用户响应
                 response_event = asyncio.Event()
@@ -639,6 +641,9 @@ async def run_task(
                 # 新增：检测ask_human工具的执行结果
                 elif "Tool 'ask_human' completed its mission!" in cleaned_message:
                     event_type = "interaction"
+                    cleaned_message = cleaned_message.split(
+                        "Tool 'ask_human' completed its mission! Result: INTERACTION_REQUIRED:"
+                    )[1].strip()
 
                 await task_manager.update_task_step(
                     self.task_id, 0, cleaned_message, event_type
@@ -678,9 +683,9 @@ async def run_task(
                 if len(inquire_parts) > 2:
                     inquire = inquire_parts[-1].strip()
 
-                await task_manager.update_task_step(
-                    task_id, 0, f"Human interaction required: {inquire}", "interaction"
-                )
+                # await task_manager.update_task_step(
+                #     task_id, 0, f"Human interaction required: {inquire}", "interaction"
+                # )
 
                 # 等待用户响应
                 response_event = asyncio.Event()
@@ -887,9 +892,9 @@ async def run_flow_task(
                 if len(inquire_parts) > 2:
                     inquire = inquire_parts[-1].strip()
 
-                await flow_manager.update_flow_step(
-                    flow_id, 0, f"Human interaction required: {inquire}", "interaction"
-                )
+                # await flow_manager.update_flow_step(
+                #     flow_id, 0, f"Human interaction required: {inquire}", "interaction"
+                # )
 
                 # 等待用户响应
                 response_event = asyncio.Event()
@@ -1112,7 +1117,7 @@ async def task_events(task_id: str):
             try:
                 event = await queue.get()
                 formatted_event = safe_json_dumps(event)
-
+                # print(f"*********event:{event}")
                 yield ": heartbeat\n\n"
 
                 if event["type"] == "complete":
@@ -1121,7 +1126,7 @@ async def task_events(task_id: str):
                 elif event["type"] == "error":
                     yield f"event: error\ndata: {formatted_event}\n\n"
                     break
-                elif event["type"] == "step":
+                    # elif event["type"] == "step":
                     task = task_manager.tasks.get(task_id)
                     if task:
                         # 使用安全的序列化函数处理steps
