@@ -827,6 +827,17 @@ async function handleSubmit() {
         showToast('请输入任务描述', 'warning');
         return;
     }
+    await handleSubmitWithText(text);
+}
+
+/**
+ * 处理提交（带文本参数）
+ */
+async function handleSubmitWithText(text) {
+    if (!text) {
+        showToast('请输入任务描述', 'warning');
+        return;
+    }
 
     // 生成会话ID
     if (!currentSessionId) {
@@ -870,6 +881,7 @@ async function handleSubmit() {
  */
 async function sendMessageFromMain() {
     const text = mainTextarea ? mainTextarea.value.trim() : '';
+
     if (!text) {
         showToast('请输入任务描述', 'warning');
         return;
@@ -879,8 +891,8 @@ async function sendMessageFromMain() {
     mainTextarea.value = '';
     autoResizeTextarea(mainTextarea);
 
-    // 创建任务并跳转到任务页面
-    await handleSubmit();
+    // 创建任务并跳转到任务页面，传递文本内容
+    await handleSubmitWithText(text);
 }
 
 /**
@@ -1023,31 +1035,68 @@ function generateTaskPageContent(taskText, mode, taskId = null, taskType = null)
                 </div>
 
                                 <!-- 底部输入框 -->
-                <div class="chat-input-container">
-                    <div class="chat-input-wrapper">
-                        <div class="chat-input-content">
-                            <div class="chat-input-box">
-                                <div class="input-controls">
-                                    <button class="control-btn file-btn" data-tooltip="附加文件">
-                                        <i class="bi bi-paperclip"></i>
-                                    </button>
-                                    <div class="mode-selector">
-                                        <button class="mode-btn ${mode === 'adaptive' ? 'active' : ''}" data-mode="adaptive" data-bubble-text="智能适配即时答案和 Agent 模式">
-                                            <i class="bi bi-magic"></i>
-                                        </button>
-                                        <button class="mode-btn ${mode === 'search' ? 'active' : ''}" data-mode="agent" data-bubble-text="处理复杂任务并自主交付结果">
-                                            <i class="bi bi-robot"></i>
-                                        </button>
-                                        <button class="mode-btn ${mode === 'chat' ? 'active' : ''}" data-mode="chat" data-bubble-text="回答日常问题或在开始任务前进行对话">
-                                            <i class="bi bi-chat-dots"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="input-area">
-                                    <textarea id="taskInputField" placeholder="输入您的消息..." rows="1"></textarea>
-                                    <button class="submit-btn" onclick="sendMessage()">
-                                        <i class="bi bi-send"></i>
-                                    </button>
+                <div class="chat-input-section">
+                    <!-- 完整的聊天框容器 -->
+                    <div class="chat-box-container">
+                        <!-- 主输入框 -->
+                        <div class="main-input-area">
+                            <textarea class="chat-textarea" id="taskInputField" placeholder="输入您的消息..." rows="2"></textarea>
+                        </div>
+
+                        <!-- 输入控制按钮 -->
+                        <div class="input-controls">
+                            <div class="control-buttons-left">
+                                <button class="control-btn upload-btn" data-tooltip="上传文件及更多">
+                                    <i class="bi bi-plus"></i>
+                                </button>
+                                <div class="mode-buttons-container">
+                                    <ul class="mode-buttons-list">
+                                        <li class="mode-button-item">
+                                            <button type="button" class="mode-btn ${mode === 'adaptive' ? 'active' : ''}" data-mode="adaptive" data-bubble-text="智能适配即时答案和 Agent 模式">
+                                                <div class="mode-btn-content">
+                                                    <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" width="16" height="16" color="var(--icon-secondary)" class="mode-icon">
+                                                        <g clip-path="url(#e6892072d0f08b69f567f6a075d5191f0)">
+                                                            <path d="M7.9987 8.66927C8.36689 8.66927 8.66536 8.37079 8.66536 8.0026C8.66536 7.63441 8.36689 7.33594 7.9987 7.33594C7.63051 7.33594 7.33203 7.63441 7.33203 8.0026C7.33203 8.37079 7.63051 8.66927 7.9987 8.66927Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                                                            <path d="M10.4679 5.5321C7.43972 2.51725 3.8846 1.16991 2.53059 2.53059C1.16991 3.8846 2.51725 7.43972 5.5321 10.4679" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                                                            <path d="M13.729 5.5321C14.1482 4.24274 14.0955 3.15364 13.4694 2.53059C12.1154 1.16991 8.56028 2.51725 5.5321 5.5321C2.51725 8.56028 1.16991 12.1154 2.53059 13.4694C3.34907 14.2919 4.97182 14.1249 6.79629 13.1982" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                                                            <path d="M13.9043 13.6582L13.5625 12.7598H10.6523L10.3105 13.6777C10.1771 14.0358 10.0632 14.2783 9.96875 14.4053C9.87435 14.529 9.71973 14.5908 9.50488 14.5908C9.32259 14.5908 9.16146 14.5241 9.02148 14.3906C8.88151 14.2572 8.81152 14.1058 8.81152 13.9365C8.81152 13.8389 8.8278 13.738 8.86035 13.6338C8.8929 13.5296 8.94661 13.3848 9.02148 13.1992L10.8525 8.55078C10.9046 8.41732 10.9665 8.25781 11.0381 8.07227C11.113 7.88346 11.1911 7.72721 11.2725 7.60352C11.3571 7.47982 11.4661 7.38053 11.5996 7.30566C11.7363 7.22754 11.904 7.18848 12.1025 7.18848C12.3044 7.18848 12.472 7.22754 12.6055 7.30566C12.7422 7.38053 12.8512 7.47819 12.9326 7.59863C13.0173 7.71908 13.0872 7.84928 13.1426 7.98926C13.2012 8.12598 13.2744 8.3099 13.3623 8.54102L15.2324 13.1602C15.3789 13.5117 15.4521 13.7673 15.4521 13.9268C15.4521 14.0928 15.3822 14.2458 15.2422 14.3857C15.1055 14.5225 14.9395 14.5908 14.7441 14.5908C14.6302 14.5908 14.5326 14.5697 14.4512 14.5273C14.3698 14.4883 14.3014 14.4346 14.2461 14.3662C14.1908 14.2946 14.1305 14.1872 14.0654 14.0439C14.0036 13.8975 13.9499 13.7689 13.9043 13.6582ZM11.0332 11.6709H13.1719L12.0928 8.7168L11.0332 11.6709Z" fill="currentColor"></path>
+                                                        </g>
+                                                        <defs>
+                                                            <clipPath id="e6892072d0f08b69f567f6a075d5191f0">
+                                                                <rect width="16" height="16" fill="white"></rect>
+                                                            </clipPath>
+                                                        </defs>
+                                                    </svg>
+                                                </div>
+                                            </button>
+                                            <div class="mode-btn-bg"></div>
+                                        </li>
+                                        <li class="mode-button-item">
+                                            <button type="button" class="mode-btn ${mode === 'agent' ? 'active' : ''}" data-mode="agent" data-bubble-text="处理复杂任务并自主交付结果">
+                                                <div class="mode-btn-content">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" width="16" height="16" color="var(--icon-secondary)" class="mode-icon">
+                                                        <path d="M7.9987 8.66536C8.36689 8.66536 8.66536 8.36689 8.66536 7.9987C8.66536 7.63051 8.36689 7.33203 7.9987 7.33203C7.63051 7.33203 7.33203 7.63051 7.33203 7.9987C7.33203 8.36689 7.63051 8.66536 7.9987 8.66536Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                                                        <path d="M13.4694 13.4694C14.8301 12.1154 13.4827 8.56028 10.4679 5.5321C7.43972 2.51725 3.8846 1.16991 2.53059 2.53059C1.16991 3.8846 2.51725 7.43972 5.5321 10.4679C8.56028 13.4827 12.1154 14.8301 13.4694 13.4694Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                                                        <path d="M10.4679 10.4679C13.4827 7.43972 14.8301 3.8846 13.4694 2.53059C12.1154 1.16991 8.56028 2.51725 5.5321 5.5321C2.51725 8.56028 1.16991 12.1154 2.53059 13.4694C3.8846 14.8301 7.43972 13.4827 10.4679 10.4679Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                                                    </svg>
+                                                </div>
+                                            </button>
+                                            <div class="mode-btn-bg"></div>
+                                        </li>
+                                        <li class="mode-button-item">
+                                            <button type="button" class="mode-btn ${mode === 'chat' ? 'active' : ''}" data-mode="chat" data-bubble-text="回答日常问题或在开始任务前进行对话">
+                                                <div class="mode-btn-content">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" width="16" height="16" color="var(--icon-primary)" class="mode-icon">
+                                                        <path d="M14 10C14 10.3536 13.8595 10.6928 13.6095 10.9428C13.3594 11.1929 13.0203 11.3333 12.6667 11.3333H4.66667L2 14V3.33333C2 2.97971 2.14048 2.64057 2.39052 2.39052C2.64057 2.14048 2.97971 2 3.33333 2H12.6667C13.0203 2 13.3594 2.14048 13.6095 2.39052C13.8595 2.64057 14 2.97971 14 3.33333V10Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                                                        <path d="M5.33337 6.66602H5.34004" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+                                                        <path d="M8 6.66602H8.00667" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+                                                        <path d="M10.6666 6.66602H10.6733" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+                                                    </svg>
+                                                </div>
+                                            </button>
+                                            <div class="mode-btn-bg"></div>
+                                        </li>
+                                    </ul>
                                 </div>
                             </div>
                         </div>
@@ -1687,12 +1736,12 @@ function toggleSidebar() {
             // 展开侧边栏
             sidebar.classList.remove('collapsed');
             expandBtn.style.display = 'none';
-            mainContent.classList.remove('full-width');
+            mainContent.classList.remove('expanded');
         } else {
             // 收缩侧边栏
             sidebar.classList.add('collapsed');
             expandBtn.style.display = 'block';
-            mainContent.classList.add('full-width');
+            mainContent.classList.add('expanded');
         }
     }
 }
