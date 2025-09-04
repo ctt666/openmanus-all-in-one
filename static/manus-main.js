@@ -1140,7 +1140,7 @@ function generateTaskPageContent(taskText, mode, taskId = null, taskType = null)
 
             <!-- 右侧交互页面 (4/5宽度) -->
             <div class="task-main-content" id="taskMainContent">
-                <!-- 内容包装器 - 2/3宽度居中 -->
+                <!-- 内容包装器 - 占据4/5宽度居中 -->
                 <div class="task-content-wrapper">
                     <!-- 顶部导航栏 -->
                     <div class="task-content-header">
