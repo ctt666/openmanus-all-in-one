@@ -2670,3 +2670,330 @@ body {
     border-right: 7px solid transparent;
     border-bottom: 7px solid rgba(0, 0, 0, 0.1);
 }
+
+/* 调试消息样式 */
+.debug-message {
+    margin: 8px 0;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-left: 3px solid #6c757d;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.debug-message-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.debug-message-content i {
+    color: #6c757d;
+    font-size: 14px;
+}
+
+.debug-message-time {
+    margin-left: auto;
+    font-size: 10px;
+    color: #999;
+}
+
+[data-theme="dark"] .debug-message {
+    background: #2d2d2d;
+    color: #cccccc;
+    border-left-color: #6c757d;
+}
+
+[data-theme="dark"] .debug-message-content i {
+    color: #cccccc;
+}
+
+[data-theme="dark"] .debug-message-time {
+    color: #999;
+}
+
+/* 思考过程容器样式 */
+.thinking-process-container {
+    margin: 0 0 4px 0;
+    background: transparent;
+}
+
+.thinking-process-header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+    width: max-content;
+    max-width: 100%;
+}
+
+.thinking-process-header:hover {
+    opacity: 0.85;
+}
+
+.thinking-process-title {
+    font-size: 16px;
+    color: #666;
+    overflow: hidden;
+    position: relative;
+}
+
+.thinking-process-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    transition: transform 0.2s ease;
+    margin-top: 4px;
+}
+
+.thinking-process-toggle.rotated {
+    transform: rotate(180deg);
+}
+
+.thinking-process-content {
+    padding: 0;
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.5;
+    color: #333;
+    max-width: 568px;
+    max-height: 200px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* 思考过程内容滚动条样式 */
+.thinking-process-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.thinking-process-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.thinking-process-content::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.thinking-process-content::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+.thinking-process-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.thinking-step {
+    display: flex;
+    flex-direction: column;
+}
+
+.thinking-step-header {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.thinking-step-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #999;
+    margin-top: 8px;
+    flex-shrink: 0;
+    transition: background-color 0.2s ease;
+}
+
+.thinking-step-title {
+    color: #333;
+    font-size: 14px;
+    line-height: 22px;
+    font-weight: normal;
+    margin: 0;
+}
+
+.thinking-step-content-wrapper {
+    display: flex;
+    gap: 12px;
+    margin-top: 2px;
+}
+
+.thinking-step-connector {
+    width: 1px;
+    background-color: #e0e0e0;
+    flex-shrink: 0;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 6px;
+}
+
+.thinking-step-content {
+    color: #666;
+    font-size: 13px;
+    line-height: 18px;
+    padding-bottom: 8px;
+    white-space: pre-wrap;
+    word-break: break-words;
+    flex: 1;
+}
+
+/* 聊天消息块样式（不使用聊天气泡） */
+.chat-message-block {
+    margin: 8px 0;
+    padding: 0;
+}
+
+.chat-message-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 4px 0;
+    padding: 0;
+}
+
+.chat-message-logo {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+}
+
+.chat-message-name {
+    font-weight: 500;
+    color: #333;
+    font-size: 16px;
+}
+
+.chat-message-content {
+    color: #333;
+    font-size: 15px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin: 0;
+    padding: 0;
+}
+
+/* openmanus消息内容区域 */
+.manus-response-content {
+    margin: 0;
+    padding: 0;
+}
+
+.chat-message-content h1,
+.chat-message-content h2,
+.chat-message-content h3,
+.chat-message-content h4,
+.chat-message-content h5,
+.chat-message-content h6 {
+    margin: 16px 0 8px 0;
+    font-weight: 600;
+    color: #333;
+}
+
+.chat-message-content h1 {
+    font-size: 24px;
+}
+
+.chat-message-content h2 {
+    font-size: 20px;
+}
+
+.chat-message-content h3 {
+    font-size: 18px;
+}
+
+.chat-message-content h4 {
+    font-size: 16px;
+}
+
+.chat-message-content p {
+    margin: 8px 0;
+}
+
+.chat-message-content ul,
+.chat-message-content ol {
+    margin: 8px 0;
+    padding-left: 20px;
+}
+
+.chat-message-content li {
+    margin: 4px 0;
+}
+
+.chat-message-content strong {
+    font-weight: 600;
+    color: #333;
+}
+
+/* 暗色主题适配 */
+[data-theme="dark"] .thinking-process-title {
+    color: #999;
+}
+
+[data-theme="dark"] .thinking-process-toggle {
+    color: #666;
+}
+
+[data-theme="dark"] .thinking-process-content {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .thinking-step-dot {
+    background-color: #666;
+}
+
+[data-theme="dark"] .thinking-step-title {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .thinking-step-connector {
+    background-color: #404040;
+}
+
+[data-theme="dark"] .thinking-step-content {
+    color: #cccccc;
+}
+
+/* 暗色主题滚动条样式 */
+[data-theme="dark"] .thinking-process-content::-webkit-scrollbar-track {
+    background: #2d2d2d;
+}
+
+[data-theme="dark"] .thinking-process-content::-webkit-scrollbar-thumb {
+    background: #555;
+}
+
+[data-theme="dark"] .thinking-process-content::-webkit-scrollbar-thumb:hover {
+    background: #777;
+}
+
+[data-theme="dark"] .chat-message-name {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .chat-message-content {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .chat-message-content h1,
+[data-theme="dark"] .chat-message-content h2,
+[data-theme="dark"] .chat-message-content h3,
+[data-theme="dark"] .chat-message-content h4,
+[data-theme="dark"] .chat-message-content h5,
+[data-theme="dark"] .chat-message-content h6 {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .chat-message-content strong {
+    color: #ffffff;
+}

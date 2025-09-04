@@ -85,16 +85,36 @@ class ManusAPIClient {
 
     async handleInteraction(message, mode, taskId, flowId) {
         try {
-            const endpoint = taskId ? `/tasks/${taskId}/interact` : `/flows/${flowId}/interact`;
+            // 根据模式选择正确的API端点
+            let endpoint;
+            let requestBody;
+
+            if (taskId) {
+                // 使用task API
+                endpoint = '/task';
+                requestBody = {
+                    prompt: message,
+                    task_id: taskId,
+                    session_id: currentSessionId
+                };
+            } else if (flowId) {
+                // 使用flow API
+                endpoint = '/flow';
+                requestBody = {
+                    prompt: message,
+                    flow_id: flowId,
+                    session_id: currentSessionId
+                };
+            } else {
+                throw new Error('No task or flow ID provided');
+            }
+
             const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    response: message,
-                    mode: mode
-                })
+                body: JSON.stringify(requestBody)
             });
 
             if (!response.ok) {
@@ -176,11 +196,14 @@ class ManusAPIClient {
             ? `/tasks/${taskId}/events`
             : `/flows/${taskId}/events`;
 
+        console.log(`🔗 连接到SSE事件流: ${endpoint}`);
+
         const eventSource = new EventSource(endpoint);
 
         // 处理各种事件类型
         eventSource.onmessage = (event) => {
             try {
+                console.log('📨 收到SSE消息:', event.data);
                 const data = JSON.parse(event.data);
                 onMessage(data);
             } catch (error) {
@@ -188,13 +211,68 @@ class ManusAPIClient {
             }
         };
 
+        // 处理特定事件类型
+        eventSource.addEventListener('status', (event) => {
+            console.log('📊 状态事件:', event.data);
+            try {
+                const data = JSON.parse(event.data);
+                onMessage(data);
+            } catch (error) {
+                console.error('解析状态事件失败:', error);
+            }
+        });
+
+        eventSource.addEventListener('think', (event) => {
+            console.log('💭 思考事件:', event.data);
+            try {
+                const data = JSON.parse(event.data);
+                onMessage(data);
+            } catch (error) {
+                console.error('解析思考事件失败:', error);
+            }
+        });
+
+        eventSource.addEventListener('log', (event) => {
+            console.log('📝 日志事件:', event.data);
+            try {
+                const data = JSON.parse(event.data);
+                onMessage(data);
+            } catch (error) {
+                console.error('解析日志事件失败:', error);
+            }
+        });
+
+        eventSource.addEventListener('complete', (event) => {
+            console.log('✅ 完成事件:', event.data);
+            try {
+                const data = JSON.parse(event.data);
+                onMessage(data);
+            } catch (error) {
+                console.error('解析完成事件失败:', error);
+            }
+        });
+
+        eventSource.addEventListener('error', (event) => {
+            console.log('❌ 错误事件:', event.data);
+            try {
+                const data = JSON.parse(event.data);
+                onMessage(data);
+            } catch (error) {
+                console.error('解析错误事件失败:', error);
+            }
+        });
+
+        eventSource.onopen = () => {
+            console.log('✅ SSE连接已建立');
+        };
+
         eventSource.onerror = (error) => {
-            console.error('SSE连接错误:', error);
+            console.error('❌ SSE连接错误:', error);
             onError(error);
         };
 
         eventSource.addEventListener('close', () => {
-            console.log('SSE连接关闭');
+            console.log('🔌 SSE连接关闭');
             onClose();
         });
 
@@ -292,7 +370,7 @@ class CustomTooltip {
         const bubbleText = button.getAttribute('data-bubble-text');
         const mode = button.getAttribute('data-mode');
 
-        if (!bubbleText) return;
+        if (!bubbleText || !this.tooltip) return;
 
         clearTimeout(this.hideTimeout);
         this.currentTarget = button;
@@ -321,7 +399,7 @@ class CustomTooltip {
     }
 
     updateModeTooltipPosition(event) {
-        if (!this.currentTarget) return;
+        if (!this.currentTarget || !this.tooltip) return;
 
         const rect = this.tooltip.getBoundingClientRect();
         const buttonRect = this.currentTarget.getBoundingClientRect();
@@ -336,13 +414,15 @@ class CustomTooltip {
 
     hide() {
         this.hideTimeout = setTimeout(() => {
-            this.tooltip.style.opacity = '0';
+            if (this.tooltip) {
+                this.tooltip.style.opacity = '0';
+            }
             this.currentTarget = null;
         }, 100);
     }
 
     updatePosition(event) {
-        if (!this.currentTarget) return;
+        if (!this.currentTarget || !this.tooltip) return;
 
         const rect = this.tooltip.getBoundingClientRect();
         const elementRect = this.currentTarget.getBoundingClientRect();
@@ -849,7 +929,7 @@ async function handleSubmitWithText(text) {
         let taskId;
         let taskType;
 
-        if (currentMode === 'search') {
+        if (currentMode === 'agent') {
             // Agent模式，创建流程
             result = await apiClient.createFlow(text);
             taskId = result.data?.flow_id;
@@ -929,6 +1009,9 @@ function showTaskPage(taskText, mode, taskId = null, taskType = null) {
     // 生成任务执行页面内容
     generateTaskPageContent(taskText, mode, taskId, taskType);
 
+    // 初始化任务页面，设置任务ID
+    initializeTaskPage(taskId, taskType);
+
     // 只有在创建新任务时才保存初始用户消息（不是从历史恢复）
     const isRestoringFromHistory = sessionStorage.getItem('restoringFromHistory') === 'true';
     if (!isRestoringFromHistory) {
@@ -956,7 +1039,7 @@ function saveInitialUserMessage(taskText) {
  */
 function generateTaskPageContent(taskText, mode, taskId = null, taskType = null) {
     const modeNames = {
-        'search': 'Agent模式',
+        'agent': 'Agent模式',
         'adaptive': '自适应模式',
         'chat': 'Chat模式'
     };
@@ -1114,6 +1197,18 @@ function generateTaskPageContent(taskText, mode, taskId = null, taskType = null)
 }
 
 function initializeTaskPage(taskId = null, taskType = null) {
+    // 设置当前任务ID和类型
+    if (taskId && taskType) {
+        if (taskType === 'flow') {
+            currentFlowId = taskId;
+            currentTaskId = null;
+        } else {
+            currentTaskId = taskId;
+            currentFlowId = null;
+        }
+        console.log('任务页面初始化 - TaskId:', currentTaskId, 'FlowId:', currentFlowId, 'Type:', taskType);
+    }
+
     // 初始化输入框自动调整高度
     const taskInputField = document.getElementById('taskInputField');
     if (taskInputField) {
@@ -1154,6 +1249,7 @@ function initializeTaskPage(taskId = null, taskType = null) {
         setTimeout(() => {
             showAssistantResponse();
         }, 2000);
+
     }
 }
 
@@ -1189,9 +1285,9 @@ function connectToTaskEvents(taskId, taskType) {
     );
 }
 
-// 全局变量：当前的Manus消息容器
-let currentManusMessage = null;
-let thinkingSteps = [];
+// 全局变量：当前的Manus消息容器（已废弃，使用新的思考过程容器）
+// let currentManusMessage = null;
+// let thinkingSteps = [];
 
 // 聊天历史管理
 let chatHistory = [];  // 当前会话的聊天历史
@@ -1277,6 +1373,7 @@ let chatHistoryManager = {
 function handleTaskEvent(event) {
     console.log('收到任务事件:', event);
 
+    // 只处理think、interaction、complete事件
     switch (event.type) {
         case 'think':
             handleThinkEvent(event);
@@ -1287,35 +1384,9 @@ function handleTaskEvent(event) {
         case 'complete':
             handleCompleteEvent(event);
             break;
-        case 'step':
-            handleStepEvent(event);
-            break;
-        case 'status':
-            handleStatusEvent(event);
-            break;
-        case 'error':
-            handleErrorEvent(event);
-            break;
-        case 'ask_human':
-            handleAskHumanEvent(event);
-            break;
-        case 'tool':
-            handleToolEvent(event);
-            break;
-        case 'message':
-            handleMessageEvent(event);
-            break;
-        case 'parse_error':
-            handleParseErrorEvent(event);
-            break;
-        case 'connection_error':
-            handleConnectionErrorEvent(event);
-            break;
-        case 'connection_open':
-            handleConnectionOpenEvent(event);
-            break;
         default:
-            console.log('未处理的事件类型:', event.type, event);
+            // 其他事件只在控制台记录，不显示在页面上
+            console.log(`[忽略事件] ${event.type}:`, event);
     }
 }
 
@@ -1324,7 +1395,7 @@ function handleTaskEvent(event) {
  */
 function handleStepEvent(event) {
     if (event.content) {
-        addAssistantMessage(event.content);
+        addChatMessage(event.content);
     }
 }
 
@@ -1336,7 +1407,7 @@ function handleStatusEvent(event) {
     if (event.steps && event.steps.length > 0) {
         event.steps.forEach(step => {
             if (step.content) {
-                addAssistantMessage(step.content);
+                addChatMessage(step.content);
             }
         });
     }
@@ -1353,7 +1424,7 @@ function handleErrorEvent(event) {
  * 处理ask_human事件
  */
 function handleAskHumanEvent(event) {
-    addAssistantMessage(event.question || event.message);
+    addChatMessage(event.question || event.message);
     console.log('等待用户回复...');
 }
 
@@ -1361,21 +1432,16 @@ function handleAskHumanEvent(event) {
  * 处理think事件
  */
 function handleThinkEvent(event) {
-    if (!currentManusMessage) {
-        createManusMessage();
-    }
+    console.log('💭 处理think事件:', event);
 
     if (event.result) {
-        thinkingSteps.push({
-            content: event.result,
-            time: new Date().toLocaleTimeString()
-        });
-
-        // 更新思考过程显示
-        updateThinkingProcess();
+        // 添加思考步骤到当前openmanus消息
+        addThinkingStepToCurrentMessage(event.result);
 
         // 保存思考步骤到聊天历史
         chatHistoryManager.addMessage('thinking', event.result);
+
+        console.log('✅ think事件已添加到思考过程区域');
     }
 }
 
@@ -1383,13 +1449,14 @@ function handleThinkEvent(event) {
  * 处理interaction事件
  */
 function handleInteractionEvent(event) {
-    if (!currentManusMessage) {
-        createManusMessage();
-    }
+    console.log('🔄 处理interaction事件:', event);
 
     if (event.result) {
-        updateManusMessageContent(event.result);
-        finishCurrentMessage();
+        // 直接添加到聊天信息框，不使用聊天气泡
+        addChatMessage(event.result);
+
+        // 保存到聊天历史
+        chatHistoryManager.addMessage('manus', event.result);
     }
 }
 
@@ -1397,15 +1464,15 @@ function handleInteractionEvent(event) {
  * 处理complete事件
  */
 function handleCompleteEvent(event) {
-    if (!currentManusMessage) {
-        createManusMessage();
-    }
+    console.log('✅ 处理complete事件:', event);
 
     if (event.result) {
-        updateManusMessageContent(event.result);
-    }
+        // 直接添加到聊天信息框，不使用聊天气泡
+        addChatMessage(event.result);
 
-    finishCurrentMessage();
+        // 保存到聊天历史
+        chatHistoryManager.addMessage('manus', event.result);
+    }
 }
 
 /**
@@ -1414,7 +1481,7 @@ function handleCompleteEvent(event) {
 function handleToolEvent(event) {
     console.log(`🔧 使用工具: ${event.tool || '未知工具'}`);
     if (event.content) {
-        addAssistantMessage(event.content);
+        addChatMessage(event.content);
     }
 }
 
@@ -1423,7 +1490,7 @@ function handleToolEvent(event) {
  */
 function handleMessageEvent(event) {
     if (event.content) {
-        addAssistantMessage(event.content);
+        addChatMessage(event.content);
     } else {
         console.log('收到消息事件');
     }
@@ -1449,6 +1516,57 @@ function handleConnectionErrorEvent(event) {
  */
 function handleConnectionOpenEvent(event) {
     console.log('✅ SSE连接已建立');
+}
+
+/**
+ * 处理日志事件
+ */
+function handleLogEvent(event) {
+    console.log('📝 日志事件:', event.result || event.message);
+    if (event.result || event.message) {
+        // 直接添加聊天消息，不使用已废弃的addAssistantMessage
+        addChatMessage(event.result || event.message);
+    }
+}
+
+/**
+ * 处理计划事件
+ */
+function handlePlanEvent(event) {
+    console.log('📋 计划事件:', event.result || event.message);
+    if (event.result || event.message) {
+        addChatMessage(`📋 计划: ${event.result || event.message}`);
+    }
+}
+
+/**
+ * 处理步骤开始事件
+ */
+function handleStepStartEvent(event) {
+    console.log('🚀 步骤开始:', event.result || event.message);
+    if (event.result || event.message) {
+        addChatMessage(`🚀 开始执行: ${event.result || event.message}`);
+    }
+}
+
+/**
+ * 处理步骤完成事件
+ */
+function handleStepFinishEvent(event) {
+    console.log('✅ 步骤完成:', event.result || event.message);
+    if (event.result || event.message) {
+        addChatMessage(`✅ 完成: ${event.result || event.message}`);
+    }
+}
+
+/**
+ * 处理总结事件
+ */
+function handleSummaryEvent(event) {
+    console.log('📊 总结事件:', event.result || event.message);
+    if (event.result || event.message) {
+        addChatMessage(`📊 总结: ${event.result || event.message}`);
+    }
 }
 
 /**
@@ -1488,137 +1606,219 @@ function addSystemMessage(text, type = 'info') {
 }
 
 /**
- * 创建Manus消息
+ * 添加调试日志到页面
  */
-function createManusMessage() {
+function addDebugLog(message) {
     const chatContainer = document.getElementById('taskChatContainer');
     if (!chatContainer) return;
 
-    const messageId = 'manus-msg-' + Date.now();
-
-    const manusMessage = document.createElement('div');
-    manusMessage.className = 'chat-message manus-message';
-    manusMessage.id = messageId;
-    manusMessage.innerHTML = `
-        <div class="manus-message-container">
-            <div class="manus-header">
-                <div class="manus-avatar">
-                    <img src="/assets/logo.jpg" alt="Manus" class="manus-logo">
-                </div>
-                <span class="manus-name">manus</span>
-            </div>
-            <div class="manus-content">
-                <div class="thinking-process-section" style="display: none;">
-                    <div class="thinking-header" onclick="toggleThinking('${messageId}')">
-                        <div class="thinking-title">
-                            <i class="bi bi-lightbulb"></i>
-                            <span>思考过程</span>
-                        </div>
-                        <div class="thinking-toggle">
-                            <i class="bi bi-chevron-down"></i>
-                        </div>
-                    </div>
-                    <div class="thinking-content">
-                        <div class="thinking-steps">
-                            <!-- 思考步骤将在这里动态添加 -->
-                        </div>
-                    </div>
-                </div>
-                <div class="message-text" style="display: none;">
-                    <!-- 消息内容将在这里显示 -->
-                </div>
-            </div>
-            <div class="message-time">${new Date().toLocaleTimeString()}</div>
+    const debugMessage = document.createElement('div');
+    debugMessage.className = 'debug-message';
+    debugMessage.innerHTML = `
+        <div class="debug-message-content">
+            <i class="bi bi-bug"></i>
+            <span>${message}</span>
+            <div class="debug-message-time">${new Date().toLocaleTimeString()}</div>
         </div>
     `;
-
-    chatContainer.appendChild(manusMessage);
-
-    // 设置logo备用方案
-    const logoElement = manusMessage.querySelector('.manus-logo');
-    setupManusLogoFallback(logoElement);
-
-    // 设置当前消息容器
-    currentManusMessage = manusMessage;
-    thinkingSteps = [];
-
+    chatContainer.appendChild(debugMessage);
     scrollChatToBottom();
-    return manusMessage;
 }
 
 /**
- * 更新思考过程
+ * 确保思考过程容器存在
  */
-function updateThinkingProcess() {
-    if (!currentManusMessage) return;
+function ensureThinkingProcessContainer() {
+    const chatContainer = document.getElementById('taskChatContainer');
+    if (!chatContainer) return;
 
-    const thinkingSection = currentManusMessage.querySelector('.thinking-process-section');
-    const thinkingStepsContainer = currentManusMessage.querySelector('.thinking-steps');
+    // 检查是否已存在思考过程容器
+    let thinkingContainer = document.getElementById('thinkingProcessContainer');
+    if (!thinkingContainer) {
+        thinkingContainer = document.createElement('div');
+        thinkingContainer.id = 'thinkingProcessContainer';
+        thinkingContainer.className = 'thinking-process-container';
+        thinkingContainer.innerHTML = `
+            <div class="thinking-process-header" onclick="toggleThinkingProcess()">
+                <div class="thinking-process-title">
+                    <img src="/assets/logo.jpg" alt="manus" class="thinking-process-icon">
+                    <span>思考过程</span>
+                </div>
+                <div class="thinking-process-toggle">
+                    <i class="bi bi-chevron-up"></i>
+                </div>
+            </div>
+            <div class="thinking-process-content">
+                <div class="thinking-process-steps">
+                    <!-- 思考步骤将在这里动态添加 -->
+                </div>
+            </div>
+        `;
 
-    if (thinkingSection && thinkingStepsContainer) {
-        // 显示思考过程区域
-        thinkingSection.style.display = 'block';
+        // 插入到聊天容器的开头
+        chatContainer.insertBefore(thinkingContainer, chatContainer.firstChild);
 
-        // 清空并重新添加所有思考步骤
-        thinkingStepsContainer.innerHTML = '';
-        thinkingSteps.forEach(step => {
-            const thinkingStep = document.createElement('div');
-            thinkingStep.className = 'thinking-step';
-            thinkingStep.innerHTML = `
-                <div class="thinking-step-content">${step.content}</div>
-                <div class="thinking-step-time">${step.time}</div>
-            `;
-            thinkingStepsContainer.appendChild(thinkingStep);
-        });
-    }
-}
-
-/**
- * 更新Manus消息内容
- */
-function updateManusMessageContent(content) {
-    if (!currentManusMessage) return;
-
-    const messageText = currentManusMessage.querySelector('.message-text');
-    if (messageText) {
-        messageText.textContent = content;
-        messageText.style.display = 'block';
+        // 设置logo备用方案
+        const logoElement = thinkingContainer.querySelector('.thinking-process-icon');
+        setupManusLogoFallback(logoElement);
     }
 
+    return thinkingContainer;
+}
+
+/**
+ * 添加思考步骤
+ */
+function addThinkingStep(content) {
+    const thinkingContainer = document.getElementById('thinkingProcessContainer');
+    if (!thinkingContainer) return;
+
+    const stepsContainer = thinkingContainer.querySelector('.thinking-process-steps');
+    if (!stepsContainer) return;
+
+    const stepElement = document.createElement('div');
+    stepElement.className = 'thinking-step';
+    stepElement.innerHTML = `
+        <div class="thinking-step-content">${content}</div>
+    `;
+
+    stepsContainer.appendChild(stepElement);
     scrollChatToBottom();
-
-    // 保存Manus消息到聊天历史
-    chatHistoryManager.addMessage('manus', content);
 }
 
 /**
- * 完成当前消息
+ * 切换思考过程显示/隐藏
  */
-function finishCurrentMessage() {
-    currentManusMessage = null;
-    thinkingSteps = [];
-}
+function toggleThinkingProcess() {
+    const thinkingContainer = document.querySelector('.thinking-process-container');
+    if (!thinkingContainer) return;
 
-/**
- * 切换思考过程显示
- */
-function toggleThinking(messageId) {
-    const message = document.getElementById(messageId);
-    if (!message) return;
+    const content = thinkingContainer.querySelector('.thinking-process-content');
+    const toggleButton = thinkingContainer.querySelector('.thinking-process-toggle');
 
-    const thinkingContent = message.querySelector('.thinking-content');
-    const toggleIcon = message.querySelector('.thinking-toggle i');
-
-    if (thinkingContent && toggleIcon) {
-        if (thinkingContent.style.display === 'none' || thinkingContent.style.display === '') {
-            thinkingContent.style.display = 'block';
-            toggleIcon.className = 'bi bi-chevron-up';
+    if (content && toggleButton) {
+        if (content.style.display === 'none' || content.style.display === '') {
+            content.style.display = 'block';
+            toggleButton.classList.remove('rotated');
         } else {
-            thinkingContent.style.display = 'none';
-            toggleIcon.className = 'bi bi-chevron-down';
+            content.style.display = 'none';
+            toggleButton.classList.add('rotated');
         }
     }
 }
+
+// 当前openmanus回复消息的引用
+let currentManusMessage = null;
+
+/**
+ * 创建或获取当前的openmanus回复消息
+ */
+function getCurrentManusMessage() {
+    if (!currentManusMessage) {
+        const chatContainer = document.getElementById('taskChatContainer');
+        if (!chatContainer) return null;
+
+        currentManusMessage = document.createElement('div');
+        currentManusMessage.className = 'chat-message-block';
+        currentManusMessage.innerHTML = `
+            <div class="chat-message-header">
+                <img src="/assets/logo.jpg" alt="OpenManus" class="chat-message-logo">
+                <span class="chat-message-name">OpenManus</span>
+            </div>
+            <div class="thinking-process-container" style="display: none;">
+                <div class="thinking-process-header">
+                    <div class="thinking-process-title">思考过程</div>
+                    <div class="thinking-process-toggle" onclick="toggleThinkingProcess()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down">
+                            <path d="m6 9 6 6 6-6"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="thinking-process-content">
+                    <div class="thinking-process-steps"></div>
+                </div>
+            </div>
+            <div class="manus-response-content"></div>
+        `;
+
+        chatContainer.appendChild(currentManusMessage);
+
+        // 设置logo备用方案
+        const logoElements = currentManusMessage.querySelectorAll('img');
+        logoElements.forEach(logo => setupManusLogoFallback(logo));
+
+        scrollChatToBottom();
+    }
+    return currentManusMessage;
+}
+
+/**
+ * 清除当前的openmanus回复消息引用
+ */
+function clearCurrentManusMessage() {
+    currentManusMessage = null;
+}
+
+/**
+ * 添加思考步骤到当前openmanus消息
+ */
+function addThinkingStepToCurrentMessage(content) {
+    const message = getCurrentManusMessage();
+    if (!message) return;
+
+    const thinkingContainer = message.querySelector('.thinking-process-container');
+    const thinkingSteps = message.querySelector('.thinking-process-steps');
+
+    if (thinkingContainer && thinkingSteps) {
+        // 显示思考过程容器
+        thinkingContainer.style.display = 'block';
+
+        // 添加思考步骤
+        const stepElement = document.createElement('div');
+        stepElement.className = 'thinking-step';
+
+        // 解析内容，提取标题和描述
+        const lines = content.split('\n').filter(line => line.trim());
+        const title = lines[0] || '思考步骤';
+        const description = lines.slice(1).join('\n') || content;
+
+        stepElement.innerHTML = `
+            <div class="thinking-step-header">
+                <div class="thinking-step-dot"></div>
+                <strong class="thinking-step-title">${title}</strong>
+            </div>
+            <div class="thinking-step-content-wrapper">
+                <div class="thinking-step-connector"></div>
+                <div class="thinking-step-content">${description}</div>
+            </div>
+        `;
+        thinkingSteps.appendChild(stepElement);
+
+        scrollChatToBottom();
+    }
+}
+
+/**
+ * 添加内容到当前openmanus消息的响应部分
+ */
+function addContentToCurrentMessage(content) {
+    const message = getCurrentManusMessage();
+    if (!message) return;
+
+    const responseContent = message.querySelector('.manus-response-content');
+    if (responseContent) {
+        responseContent.innerHTML += content;
+        scrollChatToBottom();
+    }
+}
+
+/**
+ * 添加聊天消息（不使用聊天气泡）
+ */
+function addChatMessage(content) {
+    addContentToCurrentMessage(content);
+}
+
 
 /**
  * 发送消息
@@ -1631,6 +1831,9 @@ async function sendMessage() {
 
     const message = taskInputField.value.trim();
     if (!message) return;
+
+    // 清除当前的openmanus消息引用，准备新的回复
+    clearCurrentManusMessage();
 
     // 添加用户消息
     const userMessage = document.createElement('div');
@@ -1657,8 +1860,11 @@ async function sendMessage() {
     scrollChatToBottom();
 
     // 如果有活跃的任务，发送交互
+    console.log('发送消息 - TaskId:', currentTaskId, 'FlowId:', currentFlowId, 'Mode:', currentMode);
+
     if (currentTaskId || currentFlowId) {
         try {
+            console.log('开始发送交互请求...');
             const result = await apiClient.handleInteraction(
                 message,
                 currentMode,
@@ -1677,26 +1883,22 @@ async function sendMessage() {
             console.error('发送交互失败:', error);
         }
     } else {
+        console.log('没有活跃任务，无法发送交互');
         // 没有活跃任务，模拟回复
         setTimeout(() => {
-            addAssistantMessage('收到您的消息，但当前没有活跃的任务。请返回主页面创建新任务。');
+            addChatMessage('收到您的消息，但当前没有活跃的任务。请返回主页面创建新任务。');
         }, 1000);
     }
 }
 
 /**
- * 添加助手消息 - 已废弃，使用createManusMessage替代
+ * 添加助手消息 - 已废弃，使用addChatMessage替代
  */
 function addAssistantMessage(text) {
-    console.log('addAssistantMessage已废弃，使用createManusMessage替代');
+    console.log('addAssistantMessage已废弃，使用addChatMessage替代');
 
-    // 为了兼容性，创建新的Manus消息
-    if (!currentManusMessage) {
-        createManusMessage();
-    }
-
-    updateManusMessageContent(text);
-    finishCurrentMessage();
+    // 直接添加聊天消息，不使用旧的Manus消息格式
+    addChatMessage(text);
 }
 
 /**
@@ -1710,7 +1912,7 @@ function showAssistantResponse() {
     ];
 
     const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-    addAssistantMessage(randomResponse);
+    addChatMessage(randomResponse);
 }
 
 /**
@@ -2021,7 +2223,7 @@ function selectHistoryItem(id, type) {
     } else if (type === 'flow') {
         currentFlowId = id;
         currentTaskId = null;
-        currentMode = 'search'; // Agent模式
+        currentMode = 'agent'; // Agent模式
     }
 
     // 更新URL以反映当前任务
@@ -2093,9 +2295,8 @@ function clearChatContainer() {
     // 清空所有聊天消息
     chatContainer.innerHTML = '';
 
-    // 重置当前消息状态
-    currentManusMessage = null;
-    thinkingSteps = [];
+    // 清除当前的openmanus消息引用
+    clearCurrentManusMessage();
 
     console.log('聊天容器已清空');
 }
@@ -2113,12 +2314,12 @@ function restoreChatInterface(history) {
     clearChatContainer();
 
     // 按时间顺序恢复消息
-    let currentManusMsg = null;
-    let currentThinkingSteps = [];
-
     history.forEach(message => {
         switch (message.type) {
             case 'user':
+                // 清除当前的openmanus消息引用，准备新的回复
+                clearCurrentManusMessage();
+
                 // 创建用户消息
                 const userMessage = document.createElement('div');
                 userMessage.className = 'chat-message user-message';
@@ -2132,39 +2333,16 @@ function restoreChatInterface(history) {
                     </div>
                 `;
                 chatContainer.appendChild(userMessage);
-                currentManusMsg = null; // 重置Manus消息
                 break;
 
             case 'manus':
-                // 如果没有当前Manus消息，创建新的
-                if (!currentManusMsg) {
-                    currentManusMsg = createManusMessageForHistory();
-                    currentThinkingSteps = [];
-                }
-
-                // 更新消息内容
-                const messageText = currentManusMsg.querySelector('.message-text');
-                if (messageText) {
-                    messageText.textContent = message.content;
-                    messageText.style.display = 'block';
-                }
+                // 添加内容到当前openmanus消息
+                addContentToCurrentMessage(message.content);
                 break;
 
             case 'thinking':
-                // 如果没有当前Manus消息，创建一个
-                if (!currentManusMsg) {
-                    currentManusMsg = createManusMessageForHistory();
-                    currentThinkingSteps = [];
-                }
-
-                // 添加思考步骤
-                currentThinkingSteps.push({
-                    content: message.content,
-                    time: new Date(message.timestamp).toLocaleTimeString()
-                });
-
-                // 更新思考过程显示
-                updateThinkingProcessForHistory(currentManusMsg, currentThinkingSteps);
+                // 添加思考步骤到当前openmanus消息
+                addThinkingStepToCurrentMessage(message.content);
                 break;
         }
     });
@@ -2172,86 +2350,6 @@ function restoreChatInterface(history) {
     scrollChatToBottom();
 }
 
-/**
- * 为历史恢复创建Manus消息
- */
-function createManusMessageForHistory() {
-    const chatContainer = document.getElementById('taskChatContainer');
-    if (!chatContainer) return null;
-
-    const messageId = 'manus-msg-history-' + Date.now();
-
-    const manusMessage = document.createElement('div');
-    manusMessage.className = 'chat-message manus-message';
-    manusMessage.id = messageId;
-    manusMessage.innerHTML = `
-        <div class="manus-message-container">
-            <div class="manus-header">
-                <div class="manus-avatar">
-                    <img src="/assets/logo.jpg" alt="Manus" class="manus-logo">
-                </div>
-                <span class="manus-name">manus</span>
-            </div>
-            <div class="manus-content">
-                <div class="thinking-process-section" style="display: none;">
-                    <div class="thinking-header" onclick="toggleThinking('${messageId}')">
-                        <div class="thinking-title">
-                            <i class="bi bi-lightbulb"></i>
-                            <span>思考过程</span>
-                        </div>
-                        <div class="thinking-toggle">
-                            <i class="bi bi-chevron-down"></i>
-                        </div>
-                    </div>
-                    <div class="thinking-content">
-                        <div class="thinking-steps">
-                            <!-- 思考步骤将在这里动态添加 -->
-                        </div>
-                    </div>
-                </div>
-                <div class="message-text" style="display: none;">
-                    <!-- 消息内容将在这里显示 -->
-                </div>
-            </div>
-            <div class="message-time">${new Date().toLocaleTimeString()}</div>
-        </div>
-    `;
-
-    chatContainer.appendChild(manusMessage);
-
-    // 设置logo备用方案
-    const logoElement = manusMessage.querySelector('.manus-logo');
-    setupManusLogoFallback(logoElement);
-
-    return manusMessage;
-}
-
-/**
- * 为历史恢复更新思考过程
- */
-function updateThinkingProcessForHistory(manusMessage, steps) {
-    if (!manusMessage || !steps.length) return;
-
-    const thinkingSection = manusMessage.querySelector('.thinking-process-section');
-    const thinkingStepsContainer = manusMessage.querySelector('.thinking-steps');
-
-    if (thinkingSection && thinkingStepsContainer) {
-        // 显示思考过程区域
-        thinkingSection.style.display = 'block';
-
-        // 清空并重新添加所有思考步骤
-        thinkingStepsContainer.innerHTML = '';
-        steps.forEach(step => {
-            const thinkingStep = document.createElement('div');
-            thinkingStep.className = 'thinking-step';
-            thinkingStep.innerHTML = `
-                <div class="thinking-step-content">${step.content}</div>
-                <div class="thinking-step-time">${step.time}</div>
-            `;
-            thinkingStepsContainer.appendChild(thinkingStep);
-        });
-    }
-}
 
 /**
  * 格式化日期
