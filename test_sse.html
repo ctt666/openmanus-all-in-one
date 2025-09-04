@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>SSE Test</title>
+</head>
+
+<body>
+    <h1>SSE Test</h1>
+    <div id="messages"></div>
+    <button onclick="testSSE()">Test SSE</button>
+
+    <script>
+        function testSSE() {
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.innerHTML = '';
+
+            // 首先创建任务
+            fetch('/tasks', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    prompt: '你是谁',
+                    session_id: 'test_session',
+                    chat_history: []
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Task created:', data);
+                    messagesDiv.innerHTML += '<p>Task created: ' + data.task_id + '</p>';
+
+                    // 然后建立SSE连接
+                    const eventSource = new EventSource(`/tasks/${data.task_id}/events`);
+
+                    eventSource.addEventListener('message', (event) => {
+                        console.log('Message event:', event);
+                        messagesDiv.innerHTML += '<p>Message: ' + event.data + '</p>';
+                    });
+
+                    eventSource.addEventListener('complete', (event) => {
+                        console.log('Complete event:', event);
+                        const data = JSON.parse(event.data);
+                        messagesDiv.innerHTML += '<p><strong>Complete: ' + data.result + '</strong></p>';
+                        eventSource.close();
+                    });
+
+                    eventSource.addEventListener('error', (event) => {
+                        console.log('Error event:', event);
+                        messagesDiv.innerHTML += '<p style="color: red;">Error: ' + event.data + '</p>';
+                    });
+
+                    eventSource.onerror = (err) => {
+                        console.log('SSE error:', err);
+                        messagesDiv.innerHTML += '<p style="color: red;">SSE Error: ' + err + '</p>';
+                    };
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    messagesDiv.innerHTML += '<p style="color: red;">Error: ' + error + '</p>';
+                });
+        }
+    </script>
+</body>
+
+</html>

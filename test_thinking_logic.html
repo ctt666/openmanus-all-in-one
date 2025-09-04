@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thinking容器逻辑测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .test-case {
+            border: 1px solid #ddd;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .test-case h3 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .expected {
+            background-color: #f0f8ff;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+
+        .logic {
+            background-color: #fff8f0;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+
+        .code {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Thinking容器逻辑测试</h1>
+
+    <div class="test-case">
+        <h3>测试用例1：用户发送消息后的第一个think事件</h3>
+        <div class="logic">
+            <strong>逻辑：</strong>前一条消息是用户消息，应该创建新的thinking容器
+        </div>
+        <div class="code">
+            lastMessageType = 'user'
+            shouldCreateNewContainer = true
+            结果：创建新的thinking容器
+        </div>
+        <div class="expected">
+            <strong>预期结果：</strong>显示新的thinking容器，包含"🤔 思考过程"标题
+        </div>
+    </div>
+
+    <div class="test-case">
+        <h3>测试用例2：连续多个think事件</h3>
+        <div class="logic">
+            <strong>逻辑：</strong>前一条消息不是用户消息，应该追加到现有容器
+        </div>
+        <div class="code">
+            lastMessageType = 'ai' (或其他非用户类型)
+            shouldCreateNewContainer = false
+            结果：追加到现有thinking容器
+        </div>
+        <div class="expected">
+            <strong>预期结果：</strong>在现有thinking容器中追加新的思考内容
+        </div>
+    </div>
+
+    <div class="test-case">
+        <h3>测试用例3：任务开始时的第一个think事件</h3>
+        <div class="logic">
+            <strong>逻辑：</strong>lastMessageType为null，应该创建新的thinking容器
+        </div>
+        <div class="code">
+            lastMessageType = null
+            shouldCreateNewContainer = true
+            结果：创建新的thinking容器
+        </div>
+        <div class="expected">
+            <strong>预期结果：</strong>显示新的thinking容器
+        </div>
+    </div>
+
+    <div class="test-case">
+        <h3>测试用例4：ask_human交互后的think事件</h3>
+        <div class="logic">
+            <strong>逻辑：</strong>用户回答ask_human后，前一条消息是用户消息，应该创建新的thinking容器
+        </div>
+        <div class="code">
+            lastMessageType = 'user' (用户回答)
+            shouldCreateNewContainer = true
+            结果：创建新的thinking容器
+        </div>
+        <div class="expected">
+            <strong>预期结果：</strong>显示新的thinking容器，表示继续处理
+        </div>
+    </div>
+
+    <div class="test-case">
+        <h3>测试用例5：保留历史thinking容器</h3>
+        <div class="logic">
+            <strong>逻辑：</strong>创建新thinking容器时，保留之前的容器并标记为完成状态
+        </div>
+        <div class="code">
+            之前的thinking容器：添加 'thinking-completed' 类
+            新容器：创建新的thinking容器
+            结果：保留完整的思考历史
+        </div>
+        <div class="expected">
+            <strong>预期结果：</strong>显示多个thinking容器，完成的有✅标记，当前活动的显示🤔
+        </div>
+    </div>
+
+    <div class="test-case">
+        <h3>测试用例6：避免重复创建thinking容器（修复后）</h3>
+        <div class="logic">
+            <strong>逻辑：</strong>初始化时创建的thinking容器不会被第一个think事件重复创建
+        </div>
+        <div class="code">
+            初始化：createLongThought('正在思考...', 'initializing') → 创建容器
+            第一个think事件：检查 !thoughtQuote.classList.contains('thinking-initializing')
+            结果：只在初始化容器中追加内容，不创建新容器
+        </div>
+        <div class="expected">
+            <strong>预期结果：</strong>每个任务只创建一个thinking容器，避免重复创建
+        </div>
+    </div>
+
+    <div class="test-case">
+        <h3>测试用例7：聊天历史限制（新增）</h3>
+        <div class="logic">
+            <strong>逻辑：</strong>只保留最近10条对话，避免历史记录过多导致内存问题
+        </div>
+        <div class="code">
+            MAX_DIALOGS = 10
+            MAX_MESSAGES = 20 (每次对话包含用户和AI各一条消息)
+            当chatHistory.length > MAX_MESSAGES时，删除旧消息
+        </div>
+        <div class="expected">
+            <strong>预期结果：</strong>聊天历史始终保持在20条消息以内，控制台显示截断日志
+        </div>
+    </div>
+
+    <div class="test-case">
+        <h3>实现的关键代码（修复后）</h3>
+        <div class="code">
+            // 判断是否需要创建新的thinking容器
+            const shouldCreateNewContainer = lastMessageType === 'user' || lastMessageType === null;
+
+            // 修改：只有在没有容器且不是初始化状态时才创建新容器
+            if (!thoughtQuote || (shouldCreateNewContainer &&
+            !thoughtQuote.classList.contains('thinking-initializing'))) {
+            console.log('Creating new thought quote (reason: ' + (shouldCreateNewContainer ? 'user message or first
+            think' : 'no existing container') + ')');
+            // 创建新容器时，将之前的容器标记为完成状态，但不删除
+            if (thoughtQuote) {
+            thoughtQuote.classList.add('thinking-completed');
+            thoughtQuote = null;
+            aiMessageDiv = null;
+            }
+            createLongThought(data.result, 'normal');
+            } else {
+            console.log('Updating existing thought quote (reason: continuing previous thinking)');
+            // 追加到现有容器
+            }
+        </div>
+    </div>
+
+    <div class="test-case">
+        <h3>聊天历史限制实现</h3>
+        <div class="code">
+            // 聊天历史管理配置
+            const MAX_DIALOGS = 10; // 最大保留对话数量
+            const MAX_MESSAGES = MAX_DIALOGS * 2; // 最大消息数量
+
+            // 添加到聊天历史时检查限制
+            if (chatHistory.length > MAX_MESSAGES) {
+            chatHistory.splice(0, chatHistory.length - MAX_MESSAGES);
+            console.log(`聊天历史已截断，保留最近${MAX_DIALOGS}条对话`);
+            }
+        </div>
+    </div>
+
+    <div class="test-case">
+        <h3>状态管理</h3>
+        <div class="code">
+            // 全局变量跟踪前一条消息类型
+            let lastMessageType = null; // 'user', 'ai', 'system', null
+
+            // 在addMessage函数中更新
+            function addMessage(content, role) {
+            // ... 创建消息 ...
+
+            // 更新前一条消息类型
+            lastMessageType = role;
+            }
+
+            // 在新任务开始时重置
+            function setupSSE(taskId, isLongThought) {
+            if (globalProcessedTaskId !== taskId) {
+            // ... 其他重置 ...
+            lastMessageType = null;
+            }
+            }
+        </div>
+    </div>
+
+    <h2>测试步骤</h2>
+    <ol>
+        <li>打开主应用页面</li>
+        <li>确保"Thinking"选项已勾选</li>
+        <li>发送一个需要多步思考的问题</li>
+        <li>观察think事件的容器创建行为</li>
+        <li>检查控制台日志，确认逻辑正确执行</li>
+    </ol>
+
+    <h2>验证要点</h2>
+    <ul>
+        <li>用户消息后的第一个think事件应该创建新容器</li>
+        <li>连续的think事件应该追加到同一容器</li>
+        <li>ask_human交互后应该创建新容器</li>
+        <li>创建新容器时应该保留之前的容器并标记为完成状态</li>
+        <li>完成的thinking容器应该有✅标记和不同的样式</li>
+        <li>控制台日志应该清晰显示决策原因</li>
+        <li><strong>修复后：</strong>每个任务只创建一个thinking容器，避免重复创建</li>
+        <li><strong>修复后：</strong>初始化容器不会被第一个think事件重复创建</li>
+        <li><strong>新增：</strong>聊天历史只保留最近10条对话，避免内存累积</li>
+        <li><strong>新增：</strong>加载历史记录时也只保留最近10条对话</li>
+    </ul>
+</body>
+
+</html>

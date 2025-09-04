@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>静态文件测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .test-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 15px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .status {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .logo-test {
+            width: 32px;
+            height: 32px;
+            border: 2px solid #007bff;
+            border-radius: 4px;
+        }
+
+        .url-link {
+            color: #007bff;
+            text-decoration: none;
+            font-family: monospace;
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        .url-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🔧 静态文件服务测试</h1>
+
+    <div class="test-section">
+        <h2>📁 Assets目录测试</h2>
+
+        <div class="test-item">
+            <img src="/assets/logo.jpg" alt="Logo" class="logo-test" id="logo1">
+            <span>Logo图片加载：</span>
+            <a href="/assets/logo.jpg" target="_blank" class="url-link">/assets/logo.jpg</a>
+            <span id="status1" class="status info">检测中...</span>
+        </div>
+
+        <div class="test-item">
+            <img src="/assets/community_group.jpg" alt="Community" class="logo-test" id="logo2">
+            <span>社区图片加载：</span>
+            <a href="/assets/community_group.jpg" target="_blank" class="url-link">/assets/community_group.jpg</a>
+            <span id="status2" class="status info">检测中...</span>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>📄 Static目录测试</h2>
+
+        <div class="test-item">
+            <span>CSS文件：</span>
+            <a href="/static/manus-main.css" target="_blank" class="url-link">/static/manus-main.css</a>
+            <span id="status3" class="status info">检测中...</span>
+        </div>
+
+        <div class="test-item">
+            <span>JS文件：</span>
+            <a href="/static/manus-main.js" target="_blank" class="url-link">/static/manus-main.js</a>
+            <span id="status4" class="status info">检测中...</span>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🌐 网络请求详情</h2>
+        <div id="requestInfo"></div>
+    </div>
+
+    <script>
+        function testImage(id, description, url) {
+            const img = document.getElementById(id);
+            const status = document.getElementById('status' + id.slice(-1));
+
+            img.onload = function () {
+                status.textContent = '✅ 加载成功';
+                status.className = 'status success';
+                console.log(`${description} - 加载成功`);
+            };
+
+            img.onerror = function () {
+                status.textContent = '❌ 加载失败';
+                status.className = 'status error';
+                console.log(`${description} - 加载失败`);
+            };
+
+            // 检查是否已经加载完成
+            if (img.complete) {
+                if (img.naturalWidth === 0) {
+                    img.onerror();
+                } else {
+                    img.onload();
+                }
+            }
+        }
+
+        async function testStaticFile(url, statusId, description) {
+            const status = document.getElementById(statusId);
+            try {
+                const response = await fetch(url);
+                if (response.ok) {
+                    status.textContent = '✅ 可访问';
+                    status.className = 'status success';
+                    console.log(`${description} - 可访问 (${response.status})`);
+                } else {
+                    status.textContent = `❌ ${response.status}`;
+                    status.className = 'status error';
+                    console.log(`${description} - 错误 (${response.status})`);
+                }
+            } catch (error) {
+                status.textContent = '❌ 网络错误';
+                status.className = 'status error';
+                console.log(`${description} - 网络错误:`, error);
+            }
+        }
+
+        async function displayRequestInfo() {
+            const requestInfo = document.getElementById('requestInfo');
+            const tests = [
+                { url: '/assets/logo.jpg', name: 'Logo图片' },
+                { url: '/assets/community_group.jpg', name: '社区图片' },
+                { url: '/static/manus-main.css', name: 'CSS文件' },
+                { url: '/static/manus-main.js', name: 'JS文件' }
+            ];
+
+            let html = '<table style="width:100%; border-collapse: collapse;">';
+            html += '<tr style="background:#f8f9fa;"><th style="padding:8px; border:1px solid #ddd;">文件</th><th style="padding:8px; border:1px solid #ddd;">URL</th><th style="padding:8px; border:1px solid #ddd;">状态</th><th style="padding:8px; border:1px solid #ddd;">大小</th></tr>';
+
+            for (const test of tests) {
+                try {
+                    const response = await fetch(test.url);
+                    const statusColor = response.ok ? '#d4edda' : '#f8d7da';
+                    const size = response.headers.get('content-length') || '未知';
+                    html += `<tr>
+                        <td style="padding:8px; border:1px solid #ddd;">${test.name}</td>
+                        <td style="padding:8px; border:1px solid #ddd; font-family:monospace;">${test.url}</td>
+                        <td style="padding:8px; border:1px solid #ddd; background:${statusColor};">${response.status} ${response.statusText}</td>
+                        <td style="padding:8px; border:1px solid #ddd;">${size} bytes</td>
+                    </tr>`;
+                } catch (error) {
+                    html += `<tr>
+                        <td style="padding:8px; border:1px solid #ddd;">${test.name}</td>
+                        <td style="padding:8px; border:1px solid #ddd; font-family:monospace;">${test.url}</td>
+                        <td style="padding:8px; border:1px solid #ddd; background:#f8d7da;">网络错误</td>
+                        <td style="padding:8px; border:1px solid #ddd;">-</td>
+                    </tr>`;
+                }
+            }
+            html += '</table>';
+            requestInfo.innerHTML = html;
+        }
+
+        // 运行所有测试
+        document.addEventListener('DOMContentLoaded', function () {
+            // 测试图片
+            testImage('logo1', 'Logo图片', '/assets/logo.jpg');
+            testImage('logo2', '社区图片', '/assets/community_group.jpg');
+
+            // 测试静态文件
+            testStaticFile('/static/manus-main.css', 'status3', 'CSS文件');
+            testStaticFile('/static/manus-main.js', 'status4', 'JS文件');
+
+            // 显示详细请求信息
+            displayRequestInfo();
+
+            console.log('当前页面URL:', window.location.href);
+        });
+    </script>
+</body>
+
+</html>

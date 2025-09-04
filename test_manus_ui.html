@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manus UI 测试页面</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="static/manus-main.css" rel="stylesheet">
+</head>
+
+<body>
+    <!-- 主页面容器 -->
+    <div id="mainPage" class="main-page">
+        <!-- 透明导航栏 -->
+        <nav class="manus-navbar">
+            <div class="navbar-content">
+                <a class="navbar-brand" href="#">
+                    <img src="assets/logo.jpg" alt="OpenManus Logo" class="navbar-logo">
+                    <strong>OpenManus</strong>
+                </a>
+                <div class="navbar-actions">
+                    <button class="nav-button" id="themeToggle" data-tooltip="切换主题">
+                        <i class="bi bi-moon"></i>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 主聊天容器 -->
+        <div id="chat-home-view-container" class="chat-home-container">
+            <div class="chat-content">
+                <!-- 问候部分 -->
+                <div class="greeting-section">
+                    <span class="greeting-text">
+                        你好，用户<br>
+                        <span class="greeting-subtext">我能为你做什么？</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- 聊天输入区域 -->
+            <div class="chat-input-section">
+                <div class="chat-input-container">
+                    <div class="chat-input-wrapper">
+                        <div class="chat-input-box">
+                            <!-- 文本输入区域 -->
+                            <div class="textarea-container">
+                                <textarea class="chat-textarea" rows="2" placeholder="分配一个任务或提问任何问题"
+                                    id="mainTextarea"></textarea>
+                            </div>
+
+                            <!-- 工具栏 -->
+                            <div class="chat-toolbar">
+                                <div class="toolbar-left">
+                                    <!-- 附件按钮 -->
+                                    <button class="tool-button attachment-btn" data-tooltip="添加文件">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <path d="M13.234 20.252 21 12.3"></path>
+                                            <path
+                                                d="m16 6-8.414 8.586a2 2 0 0 0 0 2.828 2 2 0 0 0 2.828 0l8.414-8.586a4 4 0 0 0 0-5.656 4 4 0 0 0-5.656 0l-8.415 8.585a6 6 0 1 0 8.486 8.486">
+                                            </path>
+                                        </svg>
+                                    </button>
+
+                                    <!-- 模式选择器 -->
+                                    <div class="mode-selector">
+                                        <button class="mode-btn active" data-mode="search"
+                                            data-tooltip="自适应 - 智能适配即时答案和 Agent 模式">
+                                            <div class="mode-icon">
+                                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                                    <path
+                                                        d="M7.9987 8.66536C8.36689 8.66536 8.66536 8.36689 8.66536 7.9987C8.66536 7.63051 8.36689 7.33203 7.9987 7.33203C7.63051 7.33203 7.33203 7.63051 7.33203 7.9987C7.33203 8.36689 7.63051 8.66536 7.9987 8.66536Z"
+                                                        stroke="currentColor" stroke-width="1.33333"
+                                                        stroke-linecap="round" stroke-linejoin="round"></path>
+                                                    <path
+                                                        d="M13.4694 13.4694C14.8301 12.1154 13.4827 8.56028 10.4679 5.5321C7.43972 2.51725 3.8846 1.16991 2.53059 2.53059C1.16991 3.8846 2.51725 7.43972 5.5321 10.4679C8.56028 13.4827 12.1154 14.8301 13.4694 13.4694Z"
+                                                        stroke="currentColor" stroke-width="1.33333"
+                                                        stroke-linecap="round" stroke-linejoin="round"></path>
+                                                    <path
+                                                        d="M10.4679 10.4679C13.4827 7.43972 14.8301 3.8846 13.4694 2.53059C12.1154 1.16991 8.56028 2.51725 5.5321 5.5321C2.51725 8.56028 1.16991 12.1154 2.53059 13.4694C3.8846 14.8301 7.43972 13.4827 10.4679 10.4679Z"
+                                                        stroke="currentColor" stroke-width="1.33333"
+                                                        stroke-linecap="round" stroke-linejoin="round"></path>
+                                                </svg>
+                                            </div>
+                                        </button>
+                                        <button class="mode-btn" data-mode="agent" data-tooltip="Agent - 处理复杂任务并自主交付结果">
+                                            <div class="mode-icon">
+                                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                                    <path
+                                                        d="M7.9987 8.66536C8.36689 8.66536 8.66536 8.36689 8.66536 7.9987C8.66536 7.63051 8.36689 7.33203 7.9987 7.33203C7.63051 7.33203 7.33203 7.63051 7.33203 7.9987C7.33203 8.36689 7.63051 8.66536 7.9987 8.66536Z"
+                                                        stroke="currentColor" stroke-width="1.33333"
+                                                        stroke-linecap="round" stroke-linejoin="round"></path>
+                                                    <path
+                                                        d="M13.4694 13.4694C14.8301 12.1154 13.4827 8.56028 10.4679 5.5321C7.43972 2.51725 3.8846 1.16991 2.53059 2.53059C1.16991 3.8846 2.51725 7.43972 5.5321 10.4679C8.56028 13.4827 12.1154 14.8301 13.4694 13.4694Z"
+                                                        stroke="currentColor" stroke-width="1.33333"
+                                                        stroke-linecap="round" stroke-linejoin="round"></path>
+                                                    <path
+                                                        d="M10.4679 10.4679C13.4827 7.43972 14.8301 3.8846 13.4694 2.53059C12.1154 1.16991 8.56028 2.51725 5.5321 5.5321C2.51725 8.56028 1.16991 12.1154 2.53059 13.4694C3.8846 14.8301 7.43972 13.4827 10.4679 10.4679Z"
+                                                        stroke="currentColor" stroke-width="1.33333"
+                                                        stroke-linecap="round" stroke-linejoin="round"></path>
+                                                </svg>
+                                            </div>
+                                        </button>
+                                        <button class="mode-btn" data-mode="chat"
+                                            data-tooltip="Chat - 回答日常问题或在开始任务前进行对话">
+                                            <div class="mode-icon">
+                                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                                    <path
+                                                        d="M14 10C14 10.3536 13.8595 10.6928 13.6095 10.9428C13.3594 11.1929 13.0203 11.3333 12.6667 11.3333H4.66667L2 14V3.33333C2 2.97971 2.14048 2.64057 2.39052 2.39052C2.64057 2.14048 2.97971 2 3.33333 2H12.6667C13.0203 2 13.3594 2.14048 13.6095 2.39052C13.8595 2.64057 14 2.97971 14 3.33333V10Z"
+                                                        stroke="currentColor" stroke-width="1.33333"
+                                                        stroke-linecap="round" stroke-linejoin="round"></path>
+                                                    <path d="M5.33337 6.66602H5.34004" stroke="currentColor"
+                                                        stroke-width="1.6" stroke-linecap="round"
+                                                        stroke-linejoin="round"></path>
+                                                    <path d="M8 6.66602H8.00667" stroke="currentColor"
+                                                        stroke-width="1.6" stroke-linecap="round"
+                                                        stroke-linejoin="round"></path>
+                                                    <path d="M10.6666 6.66602H10.6733" stroke="currentColor"
+                                                        stroke-width="1.6" stroke-linecap="round"
+                                                        stroke-linejoin="round"></path>
+                                                </svg>
+                                            </div>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="toolbar-right">
+                                    <!-- 质量设置 -->
+                                    <div class="quality-selector" data-tooltip="调整输出质量">
+                                        <span class="quality-text">质量</span>
+                                        <svg width="14" height="14" viewBox="0 0 24 25" fill="none"
+                                            class="quality-arrow">
+                                            <path d="M10.1992 18.6367L16.1992 12.6367L10.1992 6.63672"
+                                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                stroke-linejoin="round"></path>
+                                        </svg>
+                                    </div>
+
+                                    <!-- 语音按钮 -->
+                                    <button class="voice-button" data-tooltip="语音输入">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                            <line x1="12" x2="12" y1="19" y2="22"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 快速任务标签 -->
+            <div class="quick-tasks-section">
+                <div class="quick-tasks-container">
+                    <div class="quick-tasks-wrapper">
+                        <div class="quick-task-tag" data-tooltip="图片处理">
+                            <div class="task-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+                                    <circle cx="9" cy="9" r="2"></circle>
+                                    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
+                                </svg>
+                            </div>
+                            <span>图片</span>
+                        </div>
+
+                        <div class="quick-task-tag" data-tooltip="幻灯片制作">
+                            <div class="task-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path
+                                        d="M6.99976 5.9974V4.26406C6.99976 3.38041 7.7161 2.66406 8.59976 2.66406H15.3998C16.2834 2.66406 16.9998 3.38041 16.9998 4.26406V5.9974"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round"></path>
+                                    <path
+                                        d="M5.00024 10V8C5.00024 6.89543 5.89567 6 7.00024 6H17.0002C18.1048 6 19.0002 6.89543 19.0002 8V10"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round"></path>
+                                    <path
+                                        d="M19 10H5C3.89543 10 3 10.8954 3 12V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V12C21 10.8954 20.1046 10 19 10Z"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round"></path>
+                                </svg>
+                            </div>
+                            <span>幻灯片</span>
+                        </div>
+
+                        <div class="quick-task-tag" data-tooltip="网页分析">
+                            <div class="task-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                                    <path d="M10 4v4"></path>
+                                    <path d="M2 8h20"></path>
+                                    <path d="M6 4v4"></path>
+                                </svg>
+                            </div>
+                            <span>网页</span>
+                        </div>
+
+                        <div class="quick-task-tag" data-tooltip="表格处理">
+                            <div class="task-icon">
+                                <svg width="16" height="16" viewBox="0 0 17 16" fill="none" stroke="currentColor"
+                                    stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round">
+                                    <path
+                                        d="M13.1667 2H3.83333C3.09695 2 2.5 2.59695 2.5 3.33333V12.6667C2.5 13.403 3.09695 14 3.83333 14H13.1667C13.903 14 14.5 13.403 14.5 12.6667V3.33333C14.5 2.59695 13.903 2 13.1667 2Z">
+                                    </path>
+                                    <path d="M2.5 6H14.5"></path>
+                                    <path d="M2.5 10H14.5"></path>
+                                    <path d="M6.5 6V14"></path>
+                                    <path d="M10.5 6V14"></path>
+                                </svg>
+                            </div>
+                            <span>电子表格</span>
+                        </div>
+
+                        <div class="quick-task-tag" data-tooltip="数据可视化">
+                            <div class="task-icon">
+                                <svg width="16" height="16" viewBox="0 0 17 16" fill="none" stroke="currentColor"
+                                    stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M8.5 10.667V14.0003"></path>
+                                    <path d="M11.1667 9.33301V13.9997"></path>
+                                    <path d="M13.8333 6.66699V14.0003"></path>
+                                    <path
+                                        d="M15.1666 2L9.40258 7.764C9.37162 7.79504 9.33484 7.81967 9.29434 7.83647C9.25384 7.85328 9.21043 7.86193 9.16658 7.86193C9.12274 7.86193 9.07933 7.85328 9.03883 7.83647C8.99833 7.81967 8.96155 7.79504 8.93058 7.764L6.73592 5.56933C6.67341 5.50684 6.58864 5.47174 6.50025 5.47174C6.41186 5.47174 6.32709 5.50684 6.26459 5.56933L1.83325 10">
+                                    </path>
+                                    <path d="M3.16675 12V14"></path>
+                                    <path d="M5.83325 9.33301V13.9997"></path>
+                                </svg>
+                            </div>
+                            <span>可视化</span>
+                        </div>
+
+                        <div class="quick-task-tag" data-tooltip="更多功能">
+                            <span>更多</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 任务执行页面容器 -->
+    <div id="taskPage" class="task-page" style="display: none;">
+        <!-- 任务执行页面内容将通过JavaScript动态生成 -->
+    </div>
+
+    <!-- 加载提示 -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-content">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">加载中...</span>
+            </div>
+            <p class="mt-3 text-white">正在准备任务执行环境...</p>
+        </div>
+    </div>
+
+    <!-- 主要JavaScript文件 -->
+    <script src="static/manus-main.js"></script>
+
+    <style>
+        /* 确保任务页面初始隐藏 */
+        #taskPage {
+            display: none;
+        }
+    </style>
+</body>
+
+</html>

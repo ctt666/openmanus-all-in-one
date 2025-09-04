@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manus 使用演示视频</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+
+        .header p {
+            margin: 10px 0 0 0;
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .video-container {
+            padding: 40px;
+            text-align: center;
+        }
+
+        .video-player {
+            width: 100%;
+            max-width: 800px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .controls {
+            margin-top: 30px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .info {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            text-align: left;
+        }
+
+        .info h3 {
+            color: #667eea;
+            margin-top: 0;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .feature {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature h4 {
+            color: #667eea;
+            margin-top: 0;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .video-container {
+                padding: 20px;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 Manus 使用演示</h1>
+            <p>观看 Open Manus AI 代理系统的完整使用流程</p>
+        </div>
+
+        <div class="video-container">
+            <video class="video-player" controls autoplay muted>
+                <source src="manus-使用.mp4" type="video/mp4">
+                您的浏览器不支持视频播放。
+            </video>
+
+            <div class="controls">
+                <button class="btn" onclick="document.querySelector('.video-player').play()">
+                    ▶️ 播放
+                </button>
+                <button class="btn" onclick="document.querySelector('.video-player').pause()">
+                    ⏸️ 暂停
+                </button>
+                <button class="btn" onclick="document.querySelector('.video-player').currentTime = 0">
+                    🔄 重新开始
+                </button>
+                <button class="btn" onclick="toggleFullscreen()">
+                    📺 全屏
+                </button>
+            </div>
+
+            <div class="info">
+                <h3>📋 视频内容概览</h3>
+                <div class="features">
+                    <div class="feature">
+                        <h4>🚀 系统启动</h4>
+                        <p>展示 Open Manus 系统的启动过程和初始化</p>
+                    </div>
+                    <div class="feature">
+                        <h4>💬 聊天交互</h4>
+                        <p>演示与 AI 代理的自然语言对话功能</p>
+                    </div>
+                    <div class="feature">
+                        <h4>🔄 流程执行</h4>
+                        <p>展示多步骤任务流程的执行过程</p>
+                    </div>
+                    <div class="feature">
+                        <h4>📊 结果展示</h4>
+                        <p>展示任务执行结果的呈现方式</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleFullscreen() {
+            const video = document.querySelector('.video-player');
+            if (video.requestFullscreen) {
+                video.requestFullscreen();
+            } else if (video.webkitRequestFullscreen) {
+                video.webkitRequestFullscreen();
+            } else if (video.msRequestFullscreen) {
+                video.msRequestFullscreen();
+            }
+        }
+
+        // 视频加载完成后的处理
+        document.querySelector('.video-player').addEventListener('loadeddata', function () {
+            console.log('视频加载完成，可以开始播放');
+        });
+
+        // 视频播放进度监控
+        document.querySelector('.video-player').addEventListener('timeupdate', function () {
+            const currentTime = this.currentTime;
+            const duration = this.duration;
+            const progress = (currentTime / duration) * 100;
+            console.log(`播放进度: ${progress.toFixed(1)}%`);
+        });
+    </script>
+</body>
+
+</html>

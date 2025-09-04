@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>按钮状态测试</title>
+    <link href="static/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .mode-switch {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--bs-secondary-bg);
+            padding: 6px 8px;
+            border-radius: 20px;
+            margin-left: 10px;
+        }
+
+        .mode-switch .mode-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            border: none;
+        }
+
+        #btn-chat.active {
+            background-color: var(--bs-primary);
+            border-color: var(--bs-primary);
+            color: #fff;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+        }
+
+        #btn-flow.active {
+            background-color: var(--bs-warning);
+            border-color: var(--bs-warning);
+            color: #212529;
+            box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.35);
+        }
+
+        .mode-btn:not(.active) {
+            opacity: 0.5;
+            filter: grayscale(0.2);
+            border-color: var(--bs-border-color) !important;
+            background-color: transparent !important;
+            color: var(--bs-secondary-color) !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container mt-5">
+        <h2>按钮状态测试</h2>
+
+        <div class="mode-switch">
+            <button class="btn mode-btn btn-chat" id="btn-chat" data-bs-toggle="tooltip" data-bs-placement="top"
+                data-bs-title="New Chat">
+                <i class="bi bi-chat-dots"></i>
+            </button>
+            <button class="btn mode-btn btn-flow" id="btn-flow" data-bs-toggle="tooltip" data-bs-placement="top"
+                data-bs-title="Run Flow">
+                <i class="bi bi-diagram-3"></i>
+            </button>
+        </div>
+
+        <div class="mt-3">
+            <button class="btn btn-primary" onclick="setMode('chat')">设置为 Chat 模式</button>
+            <button class="btn btn-warning" onclick="setMode('flow')">设置为 Flow 模式</button>
+            <button class="btn btn-info" onclick="checkState()">检查当前状态</button>
+        </div>
+
+        <div id="status" class="mt-3 p-3 bg-light"></div>
+    </div>
+
+    <script>
+        let currentMode = 'chat';
+
+        function setMode(mode) {
+            currentMode = mode;
+            const btnChat = document.getElementById('btn-chat');
+            const btnFlow = document.getElementById('btn-flow');
+
+            console.log('设置模式:', mode);
+            console.log('按钮元素:', { btnChat, btnFlow });
+
+            if (btnChat && btnFlow) {
+                if (mode === 'chat') {
+                    btnChat.classList.add('active');
+                    btnFlow.classList.remove('active');
+                    console.log('Chat 按钮添加 active 类，Flow 按钮移除 active 类');
+                } else {
+                    btnFlow.classList.add('active');
+                    btnChat.classList.remove('active');
+                    console.log('Flow 按钮添加 active 类，Chat 按钮移除 active 类');
+                }
+            } else {
+                console.error('按钮元素未找到');
+            }
+
+            checkState();
+        }
+
+        function checkState() {
+            const btnChat = document.getElementById('btn-chat');
+            const btnFlow = document.getElementById('btn-flow');
+
+            const chatActive = btnChat ? btnChat.classList.contains('active') : false;
+            const flowActive = btnFlow ? btnFlow.classList.contains('active') : false;
+
+            const status = document.getElementById('status');
+            status.innerHTML = `
+                <strong>当前状态:</strong><br>
+                - 当前模式: ${currentMode}<br>
+                - Chat 按钮 active: ${chatActive}<br>
+                - Flow 按钮 active: ${flowActive}<br>
+                - Chat 按钮类名: ${btnChat ? btnChat.className : '未找到'}<br>
+                - Flow 按钮类名: ${btnFlow ? btnFlow.className : '未找到'}
+            `;
+
+            console.log('状态检查:', {
+                currentMode,
+                chatActive,
+                flowActive,
+                chatClasses: btnChat ? btnChat.className : '未找到',
+                flowClasses: btnFlow ? btnFlow.className : '未找到'
+            });
+        }
+
+        // 页面加载时设置默认状态
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log('页面加载完成，设置默认状态');
+            setMode('chat');
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flow模式修复测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .test-section {
+            border: 1px solid #ddd;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .button-group {
+            margin: 10px 0;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-chat {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .btn-flow {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-send {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn.active {
+            opacity: 0.7;
+        }
+
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .status {
+            font-weight: bold;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Flow模式修复测试</h1>
+
+    <div class="test-section">
+        <h2>模式切换测试</h2>
+        <div class="button-group">
+            <button class="btn btn-chat" id="btn-chat">New Chat</button>
+            <button class="btn btn-flow" id="btn-flow">Run Flow</button>
+        </div>
+        <div class="status">
+            当前模式: <span id="current-mode">chat</span>
+        </div>
+        <div class="log" id="mode-log"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>发送消息测试</h2>
+        <div class="button-group">
+            <button class="btn btn-send" id="btn-send">Send Message</button>
+        </div>
+        <div class="status">
+            当前状态: <span id="current-state">none</span>
+        </div>
+        <div class="log" id="send-log"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>完整流程测试</h2>
+        <ol>
+            <li>点击 "Run Flow" 按钮切换到Flow模式</li>
+            <li>点击 "Send Message" 按钮发送消息</li>
+            <li>观察控制台日志和网络请求</li>
+        </ol>
+        <div class="log" id="flow-log"></div>
+    </div>
+
+    <script>
+        // 模拟前端状态管理
+        let currentMode = 'chat';
+        let chat_state = 'none';
+
+        // 模拟日志函数
+        function logToElement(elementId, message) {
+            const element = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            element.innerHTML += `[${timestamp}] ${message}<br>`;
+            element.scrollTop = element.scrollHeight;
+        }
+
+        // 模拟setMode函数
+        function setMode(mode) {
+            console.log('setMode 被调用，模式:', mode);
+            currentMode = mode;
+            document.getElementById('current-mode').textContent = mode;
+
+            const btnChat = document.getElementById('btn-chat');
+            const btnFlow = document.getElementById('btn-flow');
+
+            if (mode === 'chat') {
+                btnChat.classList.add('active');
+                btnFlow.classList.remove('active');
+                logToElement('mode-log', 'Chat 模式设置完成');
+            } else {
+                btnFlow.classList.add('active');
+                btnChat.classList.remove('active');
+                logToElement('mode-log', 'Flow 模式设置完成');
+            }
+
+            // 修复：确保sendButton的onclick始终指向正确的函数
+            const sendButton = document.getElementById('btn-send');
+            if (sendButton) {
+                // 检查当前状态，如果不是working状态，则重新绑定sendMessage
+                if (chat_state !== 'working') {
+                    sendButton.onclick = sendMessage;
+                    logToElement('mode-log', 'Send按钮重新绑定到sendMessage函数');
+                }
+            }
+        }
+
+        // 模拟sendMessage函数
+        function sendMessage() {
+            console.log('sendMessage 被调用，当前模式:', currentMode);
+            logToElement('send-log', `sendMessage 被调用，当前模式: ${currentMode}`);
+
+            if (currentMode === 'chat') {
+                console.log('进入 Chat 模式，调用 createChat()');
+                logToElement('send-log', '进入 Chat 模式，调用 createChat()');
+                createChat();
+            } else {
+                console.log('进入 Flow 模式，调用 createFlow()');
+                logToElement('send-log', '进入 Flow 模式，调用 createFlow()');
+                createFlow();
+            }
+        }
+
+        // 模拟createChat函数
+        function createChat() {
+            console.log('=== createChat 被调用 ===');
+            logToElement('send-log', '=== createChat 被调用 ===');
+
+            const requestData = {
+                prompt: '测试Chat消息',
+                session_id: 'test_session',
+                chat_history: []
+            };
+
+            console.log('发送 Chat 请求到 /tasks，数据:', requestData);
+            logToElement('send-log', `发送 Chat 请求到 /tasks，数据: ${JSON.stringify(requestData)}`);
+
+            // 模拟网络请求
+            setTimeout(() => {
+                logToElement('send-log', 'Chat请求完成，调用setupSSE');
+                chat_state = 'working';
+                document.getElementById('current-state').textContent = chat_state;
+            }, 1000);
+        }
+
+        // 模拟createFlow函数
+        function createFlow() {
+            console.log('=== createFlow 被调用 ===');
+            logToElement('send-log', '=== createFlow 被调用 ===');
+
+            const requestData = {
+                prompt: '测试Flow消息',
+                session_id: 'test_session',
+                chat_history: []
+            };
+
+            console.log('发送 Flow 请求到 /flows，数据:', requestData);
+            logToElement('send-log', `发送 Flow 请求到 /flows，数据: ${JSON.stringify(requestData)}`);
+
+            // 模拟网络请求
+            setTimeout(() => {
+                logToElement('send-log', 'Flow请求完成，调用setupFlowSSE');
+                chat_state = 'working';
+                document.getElementById('current-state').textContent = chat_state;
+            }, 1000);
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function () {
+            // 设置默认模式
+            setMode('chat');
+
+            // 绑定模式切换按钮
+            const btnChat = document.getElementById('btn-chat');
+            const btnFlow = document.getElementById('btn-flow');
+
+            if (btnChat) {
+                btnChat.addEventListener('click', () => setMode('chat'));
+            }
+            if (btnFlow) {
+                btnFlow.addEventListener('click', () => setMode('flow'));
+            }
+
+            // 绑定发送按钮
+            const btnSend = document.getElementById('btn-send');
+            if (btnSend) {
+                btnSend.onclick = sendMessage;
+            }
+
+            logToElement('flow-log', '页面初始化完成，开始测试...');
+        });
+    </script>
+</body>
+
+</html>

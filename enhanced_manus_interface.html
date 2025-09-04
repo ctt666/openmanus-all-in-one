@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Manus Interface - 增强版交互界面</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --accent-color: #f093fb;
+            --success-color: #4facfe;
+            --warning-color: #43e97b;
+            --danger-color: #fa709a;
+            --dark-bg: #1a1a2e;
+            --card-bg: #16213e;
+            --text-light: #ffffff;
+            --text-muted: #a0a0a0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--dark-bg) 0%, var(--card-bg) 100%);
+            color: var(--text-light);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .navbar {
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .navbar-brand {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .main-container {
+            padding: 2rem 0;
+        }
+
+        .chat-container {
+            background: rgba(22, 33, 62, 0.8);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            padding: 1.5rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .chat-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .chat-header h2 {
+            margin: 0;
+            font-size: 2rem;
+            font-weight: 300;
+            position: relative;
+            z-index: 1;
+        }
+
+        .chat-messages {
+            max-height: 600px;
+            overflow-y: auto;
+            padding: 2rem;
+            background: rgba(22, 33, 62, 0.5);
+        }
+
+        .message {
+            margin-bottom: 1.5rem;
+            animation: slideInUp 0.5s ease-out;
+        }
+
+        .message.user {
+            text-align: right;
+        }
+
+        .message.ai {
+            text-align: left;
+        }
+
+        .message-content {
+            display: inline-block;
+            max-width: 80%;
+            padding: 1rem 1.5rem;
+            border-radius: 20px;
+            position: relative;
+            word-wrap: break-word;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+
+        .message.ai .message-content {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-light);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-bottom-left-radius: 5px;
+        }
+
+        .message-time {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+            opacity: 0.7;
+        }
+
+        .thinking-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            margin: 1rem 0;
+            animation: pulse 2s infinite;
+        }
+
+        .thinking-dots {
+            display: flex;
+            gap: 0.3rem;
+        }
+
+        .thinking-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            animation: thinking 1.4s infinite ease-in-out;
+        }
+
+        .thinking-dot:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+
+        .thinking-dot:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+
+        .input-container {
+            padding: 2rem;
+            background: rgba(22, 33, 62, 0.8);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        .form-control {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 25px;
+            color: var(--text-light);
+            padding: 1rem 1.5rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            color: var(--text-light);
+        }
+
+        .form-control::placeholder {
+            color: var(--text-muted);
+        }
+
+        .btn-send {
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            color: white;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .btn-send:hover {
+            transform: translateY(-50%) scale(1.1);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .flow-container {
+            background: rgba(22, 33, 62, 0.8);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            margin-top: 2rem;
+            overflow: hidden;
+        }
+
+        .flow-header {
+            background: linear-gradient(135deg, var(--success-color), var(--warning-color));
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .flow-header h3 {
+            margin: 0;
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .flow-steps {
+            padding: 2rem;
+        }
+
+        .flow-step {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid var(--success-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .flow-step::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s ease;
+        }
+
+        .flow-step:hover::before {
+            transform: translateX(100%);
+        }
+
+        .flow-step.completed {
+            border-left-color: var(--success-color);
+            background: rgba(79, 172, 254, 0.1);
+        }
+
+        .flow-step.active {
+            border-left-color: var(--warning-color);
+            background: rgba(67, 233, 123, 0.1);
+            transform: scale(1.02);
+        }
+
+        .step-number {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background: var(--success-color);
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            font-weight: bold;
+            margin-right: 1rem;
+        }
+
+        .step-status {
+            float: right;
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .step-status.pending {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+        }
+
+        .step-status.active {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .step-status.completed {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .tool-call {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 1rem;
+            margin: 1rem 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .tool-call-header {
+            color: var(--accent-color);
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .tool-call-content {
+            color: var(--text-muted);
+            white-space: pre-wrap;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            border-radius: 3px;
+            transition: width 0.5s ease;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        .floating-actions {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            z-index: 1000;
+        }
+
+        .floating-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .floating-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+        }
+
+        .notification {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            background: rgba(22, 33, 62, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1rem 1.5rem;
+            color: var(--text-light);
+            backdrop-filter: blur(15px);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 1001;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            border-left: 4px solid var(--success-color);
+        }
+
+        .notification.warning {
+            border-left: 4px solid var(--warning-color);
+        }
+
+        .notification.error {
+            border-left: 4px solid var(--danger-color);
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        @keyframes thinking {
+
+            0%,
+            80%,
+            100% {
+                transform: scale(0);
+            }
+
+            40% {
+                transform: scale(1);
+            }
+        }
+
+        @keyframes shimmer {
+            0% {
+                transform: translateX(-100%);
+            }
+
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 1rem;
+            }
+
+            .chat-header h2 {
+                font-size: 1.5rem;
+            }
+
+            .floating-actions {
+                bottom: 1rem;
+                right: 1rem;
+            }
+
+            .floating-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-robot"></i> Enhanced Manus
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="#"><i class="bi bi-gear"></i> 设置</a>
+                <a class="nav-link" href="#"><i class="bi bi-question-circle"></i> 帮助</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container main-container">
+        <!-- 聊天容器 -->
+        <div class="chat-container">
+            <div class="chat-header">
+                <h2><i class="bi bi-chat-dots"></i> AI 智能助手</h2>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                <!-- 欢迎消息 -->
+                <div class="message ai">
+                    <div class="message-content">
+                        <i class="bi bi-robot"></i> 您好！我是 Enhanced Manus AI 助手，有什么可以帮助您的吗？
+                        <div class="message-time">刚刚</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 输入区域 -->
+            <div class="input-container">
+                <div class="input-group">
+                    <input type="text" class="form-control" id="messageInput" placeholder="输入您的问题或指令..."
+                        autocomplete="off">
+                    <button class="btn btn-send" id="sendButton">
+                        <i class="bi bi-send"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 流程执行容器 -->
+        <div class="flow-container" id="flowContainer" style="display: none;">
+            <div class="flow-header">
+                <h3><i class="bi bi-diagram-3"></i> 任务流程执行</h3>
+            </div>
+
+            <div class="flow-steps" id="flowSteps">
+                <!-- 流程步骤将在这里动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 浮动操作按钮 -->
+    <div class="floating-actions">
+        <button class="floating-btn" id="flowModeBtn" title="切换到流程模式">
+            <i class="bi bi-diagram-3"></i>
+        </button>
+        <button class="floating-btn" id="chatModeBtn" title="切换到聊天模式">
+            <i class="bi bi-chat-dots"></i>
+        </button>
+        <button class="floating-btn" id="settingsBtn" title="设置">
+            <i class="bi bi-gear"></i>
+        </button>
+    </div>
+
+    <!-- 通知组件 -->
+    <div class="notification" id="notification"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        class EnhancedManusInterface {
+            constructor() {
+                this.currentMode = 'chat';
+                this.messageCounter = 0;
+                this.flowSteps = [];
+                this.init();
+            }
+
+            init() {
+                this.bindEvents();
+                this.setupDemoFlow();
+            }
+
+            bindEvents() {
+                // 发送消息
+                document.getElementById('sendButton').addEventListener('click', () => this.sendMessage());
+                document.getElementById('messageInput').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.sendMessage();
+                });
+
+                // 模式切换
+                document.getElementById('flowModeBtn').addEventListener('click', () => this.switchToFlowMode());
+                document.getElementById('chatModeBtn').addEventListener('click', () => this.switchToChatMode());
+                document.getElementById('settingsBtn').addEventListener('click', () => this.showSettings());
+
+                // 输入框焦点
+                document.getElementById('messageInput').addEventListener('focus', () => this.onInputFocus());
+            }
+
+            sendMessage() {
+                const input = document.getElementById('messageInput');
+                const message = input.value.trim();
+
+                if (!message) return;
+
+                // 添加用户消息
+                this.addMessage(message, 'user');
+                input.value = '';
+
+                // 显示思考指示器
+                this.showThinking();
+
+                // 模拟AI响应
+                setTimeout(() => {
+                    this.hideThinking();
+                    this.processUserMessage(message);
+                }, 2000);
+            }
+
+            addMessage(content, type) {
+                const chatMessages = document.getElementById('chatMessages');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${type}`;
+
+                const time = new Date().toLocaleTimeString('zh-CN', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                messageDiv.innerHTML = `
+                    <div class="message-content">
+                        ${content}
+                        <div class="message-time">${time}</div>
+                    </div>
+                `;
+
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            showThinking() {
+                const chatMessages = document.getElementById('chatMessages');
+                const thinkingDiv = document.createElement('div');
+                thinkingDiv.className = 'thinking-indicator';
+                thinkingDiv.id = 'thinkingIndicator';
+                thinkingDiv.innerHTML = `
+                    <i class="bi bi-robot"></i>
+                    <span>AI 正在思考中...</span>
+                    <div class="thinking-dots">
+                        <div class="thinking-dot"></div>
+                        <div class="thinking-dot"></div>
+                        <div class="thinking-dot"></div>
+                    </div>
+                `;
+
+                chatMessages.appendChild(thinkingDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            hideThinking() {
+                const thinkingIndicator = document.getElementById('thinkingIndicator');
+                if (thinkingIndicator) {
+                    thinkingIndicator.remove();
+                }
+            }
+
+            processUserMessage(message) {
+                // 检测特殊指令
+                if (message.toLowerCase().includes('流程') || message.toLowerCase().includes('flow')) {
+                    this.switchToFlowMode();
+                    this.addMessage('已切换到流程模式，正在为您创建任务流程...', 'ai');
+                    this.startFlowExecution();
+                } else if (message.toLowerCase().includes('工具') || message.toLowerCase().includes('tool')) {
+                    this.addMessage('检测到工具调用请求，正在执行相关操作...', 'ai');
+                    this.simulateToolCall();
+                } else {
+                    // 普通对话响应
+                    const responses = [
+                        '我理解您的问题，让我为您提供详细的解答...',
+                        '这是一个很有趣的问题，让我来分析一下...',
+                        '根据我的分析，我建议您考虑以下几个方面...',
+                        '我可以帮您解决这个问题，让我为您提供解决方案...'
+                    ];
+                    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                    this.addMessage(randomResponse, 'ai');
+                }
+            }
+
+            switchToFlowMode() {
+                this.currentMode = 'flow';
+                document.getElementById('flowContainer').style.display = 'block';
+                document.getElementById('flowContainer').scrollIntoView({ behavior: 'smooth' });
+                this.showNotification('已切换到流程模式', 'success');
+            }
+
+            switchToChatMode() {
+                this.currentMode = 'chat';
+                document.getElementById('flowContainer').style.display = 'none';
+                document.getElementById('chatMessages').scrollIntoView({ behavior: 'smooth' });
+                this.showNotification('已切换到聊天模式', 'success');
+            }
+
+            setupDemoFlow() {
+                this.flowSteps = [
+                    { id: 1, title: '分析用户需求', description: '理解用户的具体要求和目标', status: 'pending' },
+                    { id: 2, title: '制定执行计划', description: '创建详细的执行步骤和策略', status: 'pending' },
+                    { id: 3, title: '执行核心任务', description: '按照计划执行主要任务内容', status: 'pending' },
+                    { id: 4, title: '结果验证', description: '检查执行结果是否符合预期', status: 'pending' },
+                    { id: 5, title: '输出最终结果', description: '生成并展示最终的执行结果', status: 'pending' }
+                ];
+            }
+
+            startFlowExecution() {
+                const flowStepsContainer = document.getElementById('flowSteps');
+                flowStepsContainer.innerHTML = '';
+
+                this.flowSteps.forEach((step, index) => {
+                    const stepDiv = document.createElement('div');
+                    stepDiv.className = 'flow-step';
+                    stepDiv.innerHTML = `
+                        <span class="step-number">${step.id}</span>
+                        <span class="step-status ${step.status}">${this.getStatusText(step.status)}</span>
+                        <h5>${step.title}</h5>
+                        <p>${step.description}</p>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 0%"></div>
+                        </div>
+                    `;
+
+                    flowStepsContainer.appendChild(stepDiv);
+                });
+
+                // 开始执行流程
+                this.executeFlowSteps();
+            }
+
+            executeFlowSteps() {
+                this.flowSteps.forEach((step, index) => {
+                    setTimeout(() => {
+                        this.updateStepStatus(index, 'active');
+                        this.animateProgress(index);
+
+                        setTimeout(() => {
+                            this.updateStepStatus(index, 'completed');
+                            if (index === this.flowSteps.length - 1) {
+                                this.showNotification('流程执行完成！', 'success');
+                            }
+                        }, 3000);
+                    }, index * 4000);
+                });
+            }
+
+            updateStepStatus(stepIndex, status) {
+                const stepDiv = document.querySelectorAll('.flow-step')[stepIndex];
+                const statusSpan = stepDiv.querySelector('.step-status');
+                const stepNumber = stepDiv.querySelector('.step-number');
+
+                stepDiv.className = `flow-step ${status}`;
+                statusSpan.className = `step-status ${status}`;
+                statusSpan.textContent = this.getStatusText(status);
+
+                if (status === 'completed') {
+                    stepNumber.style.background = 'var(--success-color)';
+                } else if (status === 'active') {
+                    stepNumber.style.background = 'var(--warning-color)';
+                }
+            }
+
+            animateProgress(stepIndex) {
+                const progressFill = document.querySelectorAll('.flow-step')[stepIndex].querySelector('.progress-fill');
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += 2;
+                    progressFill.style.width = progress + '%';
+                    if (progress >= 100) {
+                        clearInterval(interval);
+                    }
+                }, 60);
+            }
+
+            getStatusText(status) {
+                const statusMap = {
+                    'pending': '等待中',
+                    'active': '执行中',
+                    'completed': '已完成'
+                };
+                return statusMap[status] || '未知';
+            }
+
+            simulateToolCall() {
+                const toolCallDiv = document.createElement('div');
+                toolCallDiv.className = 'tool-call';
+                toolCallDiv.innerHTML = `
+                    <div class="tool-call-header">🔧 工具调用: web_search</div>
+                    <div class="tool-call-content">
+参数: {
+  "query": "Open Manus AI 系统特性",
+  "max_results": 5
+}
+
+执行结果: 正在搜索相关信息...
+                    </div>
+                `;
+
+                document.getElementById('chatMessages').appendChild(toolCallDiv);
+                document.getElementById('chatMessages').scrollTop = chatMessages.scrollHeight;
+            }
+
+            showNotification(message, type = 'info') {
+                const notification = document.getElementById('notification');
+                notification.textContent = message;
+                notification.className = `notification ${type}`;
+                notification.classList.add('show');
+
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
+            }
+
+            onInputFocus() {
+                // 输入框获得焦点时的动画效果
+                const input = document.getElementById('messageInput');
+                input.style.transform = 'scale(1.02)';
+                setTimeout(() => {
+                    input.style.transform = 'scale(1)';
+                }, 200);
+            }
+
+            showSettings() {
+                this.showNotification('设置功能开发中...', 'warning');
+            }
+        }
+
+        // 初始化界面
+        document.addEventListener('DOMContentLoaded', () => {
+            new EnhancedManusInterface();
+        });
+    </script>
+</body>
+
+</html>

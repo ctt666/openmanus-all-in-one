@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flow显示调试测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .test-section {
+            border: 1px solid #ddd;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .warning {
+            color: #ffc107;
+            font-weight: bold;
+        }
+
+        .info {
+            color: #17a2b8;
+            font-weight: bold;
+        }
+
+        /* Flow显示样式 */
+        .flow-display-container {
+            margin: 20px 0;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: #fafafa;
+            overflow: hidden;
+        }
+
+        .flow-plan-section,
+        .flow-steps-section,
+        .flow-summary-section {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .flow-plan-section:last-child,
+        .flow-steps-section:last-child,
+        .flow-summary-section:last-child {
+            border-bottom: none;
+        }
+
+        .flow-plan-header h4,
+        .flow-steps-header h4,
+        .flow-summary-header h4 {
+            margin: 0;
+            color: #333;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .plan-content pre,
+        .summary-content pre {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 0;
+            white-space: pre-wrap;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .flow-step {
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            overflow: hidden;
+        }
+
+        .flow-step.running {
+            border-left: 4px solid #007bff;
+        }
+
+        .flow-step.completed {
+            border-left: 4px solid #28a745;
+        }
+
+        .flow-step.failed {
+            border-left: 4px solid #dc3545;
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .step-number {
+            background: #007bff;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .step-title {
+            flex: 1;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .step-status {
+            font-size: 18px;
+            margin-left: 10px;
+        }
+
+        .step-content {
+            padding: 15px;
+        }
+
+        .step-description {
+            margin-bottom: 10px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .step-details {
+            border-top: 1px solid #e9ecef;
+            padding-top: 10px;
+        }
+
+        .step-detail {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 8px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .step-detail.think {
+            background: #fff3cd;
+            border-left: 3px solid #ffc107;
+        }
+
+        .step-detail.act {
+            background: #d1ecf1;
+            border-left: 3px solid #17a2b8;
+        }
+
+        .detail-type {
+            margin-right: 8px;
+            font-size: 16px;
+        }
+
+        .detail-content {
+            flex: 1;
+            font-size: 13px;
+            line-height: 1.4;
+            color: #333;
+        }
+
+        .execution-phase-header {
+            background: #e3f2fd;
+            padding: 10px 15px;
+            border-bottom: 1px solid #bbdefb;
+        }
+
+        .execution-phase-title {
+            margin: 0;
+            color: #1976d2;
+            font-size: 14px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Flow显示调试测试</h1>
+
+    <div class="test-section">
+        <h2>FlowDisplayManager测试</h2>
+        <button onclick="testFlowDisplayManager()">测试FlowDisplayManager</button>
+        <button onclick="testContainerCreation()">测试容器创建</button>
+        <button onclick="testEventHandling()">测试事件处理</button>
+        <div class="log" id="flow-test-log"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Flow容器显示区域</h2>
+        <div id="flow-display-area"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>模拟Flow事件</h2>
+        <button onclick="simulatePlanEvent()">模拟Plan事件</button>
+        <button onclick="simulateStepEvent()">模拟Step事件</button>
+        <button onclick="simulateThinkEvent()">模拟Think事件</button>
+        <button onclick="simulateActEvent()">模拟Act事件</button>
+        <button onclick="simulateSummaryEvent()">模拟Summary事件</button>
+        <div class="log" id="event-log"></div>
+    </div>
+
+    <script>
+        // 日志函数
+        function logToElement(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            const colorClass = type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'info';
+            element.innerHTML += `<span class="${colorClass}">[${timestamp}] ${message}</span><br>`;
+            element.scrollTop = element.scrollHeight;
+        }
+
+        // FlowDisplayManager类（简化版本）
+        class FlowDisplayManager {
+            constructor() {
+                this.flowData = {
+                    plan: null,
+                    steps: [],
+                    summary: null,
+                    currentStepIndex: -1
+                };
+                this.containers = [];
+                this.currentContainer = null;
+                this.executionPhase = 0;
+                logToElement('flow-test-log', 'FlowDisplayManager构造函数被调用', 'success');
+            }
+
+            // 初始化展示容器
+            initContainer() {
+                logToElement('flow-test-log', 'initContainer被调用', 'info');
+
+                // 创建主容器
+                this.container = document.createElement('div');
+                this.container.className = 'flow-display-container';
+                this.container.innerHTML = `
+                    <div class="flow-plan-section" style="display: none;">
+                        <div class="flow-plan-header">
+                            <h4>📋 执行计划</h4>
+                        </div>
+                        <div class="flow-plan-content"></div>
+                    </div>
+                    <div class="flow-steps-section" style="display: none;">
+                        <div class="flow-steps-header">
+                            <h4>🔄 执行步骤</h4>
+                        </div>
+                        <div class="flow-steps-content"></div>
+                    </div>
+                    <div class="flow-summary-section" style="display: none;">
+                        <div class="flow-summary-header">
+                            <h4>📝 执行总结</h4>
+                        </div>
+                        <div class="flow-summary-content"></div>
+                    </div>
+                `;
+
+                // 设置执行阶段标题
+                this.executionPhase++;
+                const phaseHeader = document.createElement('div');
+                phaseHeader.className = 'execution-phase-header';
+                phaseHeader.innerHTML = `<h5 class="execution-phase-title">执行阶段 ${this.executionPhase}</h5>`;
+                this.container.insertBefore(phaseHeader, this.container.firstChild);
+
+                // 添加到容器列表
+                this.containers.push(this.container);
+                this.currentContainer = this.container;
+
+                logToElement('flow-test-log', `容器创建成功，执行阶段: ${this.executionPhase}`, 'success');
+                return this.container;
+            }
+
+            // 重置数据
+            resetDataOnly() {
+                logToElement('flow-test-log', 'resetDataOnly被调用', 'info');
+                this.flowData = {
+                    plan: null,
+                    steps: [],
+                    summary: null,
+                    currentStepIndex: -1
+                };
+                logToElement('flow-test-log', '数据重置完成', 'success');
+            }
+
+            // 处理计划事件
+            handlePlanEvent(text) {
+                logToElement('flow-test-log', `handlePlanEvent被调用，内容: ${text}`, 'info');
+                this.flowData.plan = text;
+
+                const planSection = this.currentContainer.querySelector('.flow-plan-section');
+                const planContent = planSection.querySelector('.flow-plan-content');
+
+                planContent.innerHTML = `<pre>${text}</pre>`;
+                planSection.style.display = 'block';
+
+                logToElement('flow-test-log', '计划事件处理完成，计划区域已显示', 'success');
+            }
+
+            // 处理步骤事件
+            handleStepEventByContent(text) {
+                logToElement('flow-test-log', `handleStepEventByContent被调用，内容: ${text}`, 'info');
+
+                if (text.includes('开始执行步骤')) {
+                    // 新步骤开始
+                    const stepNumber = this.flowData.steps.length + 1;
+                    const stepTitle = text.replace('开始执行步骤', '').trim();
+
+                    const step = {
+                        number: stepNumber,
+                        title: stepTitle,
+                        status: 'running',
+                        description: '',
+                        details: []
+                    };
+
+                    this.flowData.steps.push(step);
+                    this.currentStepIndex = stepNumber - 1;
+
+                    this.updateStepsDisplay();
+                    logToElement('flow-test-log', `新步骤开始: ${stepTitle}`, 'success');
+                } else if (text.includes('步骤执行完成')) {
+                    // 步骤完成
+                    if (this.currentStepIndex >= 0 && this.currentStepIndex < this.flowData.steps.length) {
+                        this.flowData.steps[this.currentStepIndex].status = 'completed';
+                        this.updateStepsDisplay();
+                        logToElement('flow-test-log', '步骤执行完成', 'success');
+                    }
+                }
+            }
+
+            // 处理详细事件
+            handleDetailEvent(type, text) {
+                logToElement('flow-test-log', `handleDetailEvent被调用，类型: ${type}, 内容: ${text}`, 'info');
+
+                if (this.currentStepIndex >= 0 && this.currentStepIndex < this.flowData.steps.length) {
+                    const step = this.flowData.steps[this.currentStepIndex];
+                    step.details.push({ type, content: text });
+                    this.updateStepsDisplay();
+                    logToElement('flow-test-log', `${type}事件已添加到步骤${step.number}`, 'success');
+                }
+            }
+
+            // 处理总结事件
+            handleSummaryEvent(text) {
+                logToElement('flow-test-log', `handleSummaryEvent被调用，内容: ${text}`, 'info');
+                this.flowData.summary = text;
+
+                const summarySection = this.currentContainer.querySelector('.flow-summary-section');
+                const summaryContent = summarySection.querySelector('.flow-summary-content');
+
+                summaryContent.innerHTML = `<pre>${text}</pre>`;
+                summarySection.style.display = 'block';
+
+                logToElement('flow-test-log', '总结事件处理完成，总结区域已显示', 'success');
+            }
+
+            // 更新步骤显示
+            updateStepsDisplay() {
+                const stepsSection = this.currentContainer.querySelector('.flow-steps-section');
+                const stepsContent = stepsSection.querySelector('.flow-steps-content');
+
+                stepsContent.innerHTML = '';
+
+                this.flowData.steps.forEach(step => {
+                    const stepDiv = document.createElement('div');
+                    stepDiv.className = `flow-step ${step.status}`;
+
+                    stepDiv.innerHTML = `
+                        <div class="step-header">
+                            <div class="step-number">${step.number}</div>
+                            <div class="step-title">${step.title}</div>
+                            <div class="step-status">
+                                ${step.status === 'running' ? '🔄' : step.status === 'completed' ? '✅' : '❌'}
+                            </div>
+                        </div>
+                        <div class="step-content">
+                            <div class="step-description">${step.description}</div>
+                            ${step.details.length > 0 ? '<div class="step-details">' +
+                            step.details.map(detail => `
+                                    <div class="step-detail ${detail.type}">
+                                        <span class="detail-type">${detail.type === 'think' ? '🤔' : '⚡'}</span>
+                                        <div class="detail-content">${detail.content}</div>
+                                    </div>
+                                `).join('') + '</div>' : ''}
+                        </div>
+                    `;
+
+                    stepsContent.appendChild(stepDiv);
+                });
+
+                stepsSection.style.display = 'block';
+            }
+        }
+
+        // 全局变量
+        let flowDisplayManager = null;
+        let flowDisplayArea = null;
+
+        // 测试FlowDisplayManager
+        function testFlowDisplayManager() {
+            logToElement('flow-test-log', '开始测试FlowDisplayManager', 'info');
+
+            try {
+                flowDisplayManager = new FlowDisplayManager();
+                logToElement('flow-test-log', 'FlowDisplayManager创建成功', 'success');
+
+                // 测试容器创建
+                const container = flowDisplayManager.initContainer();
+                flowDisplayArea.appendChild(container);
+                logToElement('flow-test-log', '容器已添加到显示区域', 'success');
+
+            } catch (error) {
+                logToElement('flow-test-log', `错误: ${error.message}`, 'error');
+                console.error('FlowDisplayManager测试失败:', error);
+            }
+        }
+
+        // 测试容器创建
+        function testContainerCreation() {
+            if (!flowDisplayManager) {
+                logToElement('flow-test-log', '请先创建FlowDisplayManager', 'warning');
+                return;
+            }
+
+            logToElement('flow-test-log', '测试容器创建', 'info');
+            const container = flowDisplayManager.initContainer();
+            flowDisplayArea.appendChild(container);
+            logToElement('flow-test-log', '新容器创建并添加成功', 'success');
+        }
+
+        // 测试事件处理
+        function testEventHandling() {
+            if (!flowDisplayManager) {
+                logToElement('flow-test-log', '请先创建FlowDisplayManager', 'warning');
+                return;
+            }
+
+            logToElement('flow-test-log', '测试事件处理', 'info');
+
+            // 模拟一些事件
+            flowDisplayManager.handlePlanEvent('这是一个测试计划\n包含多个步骤\n1. 第一步\n2. 第二步');
+            flowDisplayManager.handleStepEventByContent('开始执行步骤：数据收集');
+            flowDisplayManager.handleDetailEvent('think', '思考如何收集数据...');
+            flowDisplayManager.handleDetailEvent('act', '开始收集数据');
+            flowDisplayManager.handleStepEventByContent('步骤执行完成');
+
+            logToElement('flow-test-log', '事件处理测试完成', 'success');
+        }
+
+        // 模拟事件函数
+        function simulatePlanEvent() {
+            if (!flowDisplayManager) {
+                logToElement('event-log', '请先创建FlowDisplayManager', 'warning');
+                return;
+            }
+
+            const planText = `执行计划：
+1. 分析用户需求
+2. 制定解决方案
+3. 执行解决方案
+4. 验证结果`;
+
+            flowDisplayManager.handlePlanEvent(planText);
+            logToElement('event-log', 'Plan事件已模拟', 'success');
+        }
+
+        function simulateStepEvent() {
+            if (!flowDisplayManager) {
+                logToElement('event-log', '请先创建FlowDisplayManager', 'warning');
+                return;
+            }
+
+            flowDisplayManager.handleStepEventByContent('开始执行步骤：需求分析');
+            logToElement('event-log', 'Step事件已模拟', 'success');
+        }
+
+        function simulateThinkEvent() {
+            if (!flowDisplayManager) {
+                logToElement('event-log', '请先创建FlowDisplayManager', 'warning');
+                return;
+            }
+
+            flowDisplayManager.handleDetailEvent('think', '正在分析用户的具体需求...');
+            logToElement('event-log', 'Think事件已模拟', 'success');
+        }
+
+        function simulateActEvent() {
+            if (!flowDisplayManager) {
+                logToElement('event-log', '请先创建FlowDisplayManager', 'warning');
+                return;
+            }
+
+            flowDisplayManager.handleDetailEvent('act', '开始执行需求分析任务');
+            logToElement('event-log', 'Act事件已模拟', 'success');
+        }
+
+        function simulateSummaryEvent() {
+            if (!flowDisplayManager) {
+                logToElement('event-log', '请先创建FlowDisplayManager', 'warning');
+                return;
+            }
+
+            const summaryText = `执行总结：
+✅ 需求分析完成
+✅ 解决方案制定完成
+✅ 执行过程顺利
+📊 总体满意度：95%`;
+
+            flowDisplayManager.handleSummaryEvent(summaryText);
+            logToElement('event-log', 'Summary事件已模拟', 'success');
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function () {
+            flowDisplayArea = document.getElementById('flow-display-area');
+            logToElement('flow-test-log', '页面初始化完成，可以开始测试', 'success');
+        });
+    </script>
+</body>
+
+</html>

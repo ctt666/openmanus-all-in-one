@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ask Human 重复问题修复测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .test-button:hover {
+            background: #0056b3;
+        }
+
+        .log-area {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Ask Human 重复问题修复测试</h1>
+
+    <div class="test-section">
+        <h2>测试说明</h2>
+        <p>这个测试页面用于验证 ask_human 工具重复提问的问题是否已经修复。</p>
+        <p>主要修复内容：</p>
+        <ul>
+            <li>全局状态管理，防止重复处理</li>
+            <li>消息去重机制</li>
+            <li>优先级检测逻辑</li>
+            <li>任务ID关联的状态重置</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>状态检查</h2>
+        <button class="test-button" onclick="checkState()">检查当前状态</button>
+        <button class="test-button" onclick="resetState()">重置状态</button>
+        <button class="test-button" onclick="simulateEvents()">模拟事件</button>
+        <div id="stateDisplay" class="log-area"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>测试日志</h2>
+        <button class="test-button" onclick="clearLog()">清空日志</button>
+        <div id="testLog" class="log-area"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>修复效果验证</h2>
+        <p>修复前的问题：</p>
+        <ul>
+            <li>前端会显示两次相同的 ask_human 问题</li>
+            <li>多个事件监听器重复处理同一事件</li>
+            <li>状态管理混乱，无法正确跟踪处理状态</li>
+        </ul>
+
+        <p>修复后的改进：</p>
+        <ul>
+            <li>全局状态管理，确保每个 ask_human 只处理一次</li>
+            <li>消息去重，防止相同内容重复显示</li>
+            <li>优先级检测，避免多个检测器同时匹配</li>
+            <li>任务ID关联，支持多任务场景</li>
+        </ul>
+    </div>
+
+    <script>
+        // 模拟全局状态变量
+        let globalAskHumanProcessed = false;
+        let globalProcessedInquire = null;
+        let globalProcessedTaskId = null;
+        let currentInteractionTaskId = null;
+        let chat_state = 'none';
+
+        function log(message, type = 'info') {
+            const logArea = document.getElementById('testLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            logEntry.className = `status ${type}`;
+            logArea.appendChild(logEntry);
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        function checkState() {
+            const stateDisplay = document.getElementById('stateDisplay');
+            stateDisplay.innerHTML = `
+                <strong>当前状态：</strong><br>
+                globalAskHumanProcessed: ${globalAskHumanProcessed}<br>
+                globalProcessedInquire: ${globalProcessedInquire || 'null'}<br>
+                globalProcessedTaskId: ${globalProcessedTaskId || 'null'}<br>
+                currentInteractionTaskId: ${currentInteractionTaskId || 'null'}<br>
+                chat_state: ${chat_state}
+            `;
+            log('状态检查完成', 'info');
+        }
+
+        function resetState() {
+            globalAskHumanProcessed = false;
+            globalProcessedInquire = null;
+            globalProcessedTaskId = null;
+            currentInteractionTaskId = null;
+            chat_state = 'none';
+            log('状态已重置', 'success');
+            checkState();
+        }
+
+        function simulateEvents() {
+            log('开始模拟 ask_human 事件...', 'info');
+
+            // 模拟第一个事件：工具选择
+            simulateEvent('tool', 'Manus selected 1 tools to use\nTools being prepared: [\'ask_human\']\nTool arguments: {"inquire":"您希望这份周末计划侧重于哪方面?"}');
+
+            // 模拟第二个事件：工具执行
+            simulateEvent('act', 'Tool \'ask_human\' completed its mission! Result: INTERACTION_REQUIRED: 您希望这份周末计划侧重于哪方面?');
+
+            // 模拟第三个事件：交互需求
+            simulateEvent('interaction', 'Human interaction required: 您希望这份周末计划侧重于哪方面?');
+
+            log('事件模拟完成', 'info');
+        }
+
+        function simulateEvent(type, content) {
+            log(`模拟 ${type} 事件: ${content.substring(0, 50)}...`, 'info');
+
+            // 模拟事件处理逻辑
+            if (content.includes('ask_human') && !globalAskHumanProcessed) {
+                let inquire = null;
+
+                // 检测 ask_human
+                if (content.includes('Tool \'ask_human\' completed its mission!')) {
+                    const match = content.match(/INTERACTION_REQUIRED:\s*(.+)/);
+                    if (match) {
+                        inquire = match[1].trim();
+                        log(`✅ 检测到 ask_human 工具完成: ${inquire}`, 'success');
+                    }
+                } else if (content.includes('INTERACTION_REQUIRED:')) {
+                    inquire = content.replace(/.*INTERACTION_REQUIRED:\s*/, '').trim();
+                    log(`✅ 检测到 INTERACTION_REQUIRED: ${inquire}`, 'success');
+                } else if (type === 'tool' && content.includes('ask_human')) {
+                    const toolArgsMatch = content.match(/Tool arguments: ({[^}]+})/);
+                    if (toolArgsMatch) {
+                        try {
+                            const toolArgs = JSON.parse(toolArgsMatch[1]);
+                            if (toolArgs.inquire) {
+                                inquire = toolArgs.inquire;
+                                log(`✅ 检测到工具参数: ${inquire}`, 'success');
+                            }
+                        } catch (e) {
+                            log(`❌ 解析工具参数失败: ${e.message}`, 'error');
+                        }
+                    }
+                }
+
+                if (inquire) {
+                    // 检查是否重复
+                    if (globalAskHumanProcessed && globalProcessedInquire === inquire) {
+                        log(`⚠️ 重复的 ask_human 检测到，已跳过: ${inquire}`, 'error');
+                        return;
+                    }
+
+                    // 处理 ask_human
+                    log(`🎯 处理 ask_human 交互: ${inquire}`, 'success');
+                    globalAskHumanProcessed = true;
+                    globalProcessedInquire = inquire;
+                    globalProcessedTaskId = 'test-task-123';
+                    currentInteractionTaskId = 'test-task-123';
+                    chat_state = 'none';
+                }
+            } else if (globalAskHumanProcessed) {
+                log(`ℹ️ ask_human 已处理，跳过其他逻辑`, 'info');
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('testLog').innerHTML = '';
+            log('日志已清空', 'info');
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function () {
+            log('测试页面已加载', 'success');
+            checkState();
+        });
+    </script>
+</body>
+
+</html>

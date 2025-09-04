@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>消息结构测试</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="static/manus-main.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .test-chat {
+            max-width: 800px;
+            margin: 20px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            min-height: 400px;
+        }
+
+        .control-panel {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn:hover {
+            opacity: 0.8;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🧪 消息结构测试</h1>
+
+    <div class="test-section">
+        <h2>控制面板</h2>
+        <div class="control-panel">
+            <button class="btn btn-primary" onclick="testNewMessage()">创建新Manus消息</button>
+            <button class="btn btn-secondary" onclick="testAddContent()">添加消息内容</button>
+            <button class="btn btn-secondary" onclick="testAddThinking()">添加思考步骤</button>
+            <button class="btn btn-danger" onclick="clearMessages()">清空消息</button>
+        </div>
+        <p><strong>说明:</strong> 测试新的Manus消息结构，确保不会出现旧的assistant-message结构。</p>
+    </div>
+
+    <div class="test-chat" id="testChat">
+        <!-- 测试消息将在这里显示 -->
+        <div class="chat-message user-message">
+            <div class="message-avatar">
+                <i class="bi bi-person-circle"></i>
+            </div>
+            <div class="message-content">
+                <div class="message-text">你好，请帮我制定一个旅行计划</div>
+                <div class="message-time">16:18:30</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>结构检查</h2>
+        <div id="structureInfo">
+            <p>页面加载后将显示当前消息结构信息...</p>
+        </div>
+    </div>
+
+    <script src="static/manus-main.js"></script>
+    <script>
+        let messageCount = 0;
+
+        function testNewMessage() {
+            // 重置当前消息状态
+            currentManusMessage = null;
+            thinkingSteps = [];
+
+            // 创建新消息
+            createManusMessage();
+            messageCount++;
+
+            updateStructureInfo();
+            console.log('创建了新的Manus消息');
+        }
+
+        function testAddContent() {
+            if (!currentManusMessage) {
+                testNewMessage();
+            }
+
+            const content = `这是测试消息内容 #${++messageCount}。我将为您制定详细的旅行计划，包括景点推荐、住宿安排和交通指南。`;
+            updateManusMessageContent(content);
+
+            updateStructureInfo();
+            console.log('添加了消息内容');
+        }
+
+        function testAddThinking() {
+            if (!currentManusMessage) {
+                testNewMessage();
+            }
+
+            const thinkingContent = `思考步骤 ${++messageCount}: 正在分析用户的旅行需求和偏好...`;
+
+            // 模拟think事件
+            thinkingSteps.push({
+                content: thinkingContent,
+                time: new Date().toLocaleTimeString()
+            });
+
+            updateThinkingProcess();
+
+            updateStructureInfo();
+            console.log('添加了思考步骤');
+        }
+
+        function clearMessages() {
+            const chatContainer = document.getElementById('testChat');
+            // 保留用户消息，只清除Manus消息
+            const userMessage = chatContainer.querySelector('.user-message');
+            chatContainer.innerHTML = '';
+            if (userMessage) {
+                chatContainer.appendChild(userMessage);
+            }
+
+            // 重置状态
+            currentManusMessage = null;
+            thinkingSteps = [];
+            messageCount = 0;
+
+            updateStructureInfo();
+            console.log('清空了所有Manus消息');
+        }
+
+        function updateStructureInfo() {
+            const structureInfo = document.getElementById('structureInfo');
+            const chatContainer = document.getElementById('testChat');
+
+            const messages = chatContainer.querySelectorAll('.chat-message');
+            const manusMessages = chatContainer.querySelectorAll('.manus-message');
+            const oldAssistantMessages = chatContainer.querySelectorAll('.assistant-message');
+
+            let html = '<table style="width:100%; border-collapse: collapse;">';
+            html += '<tr style="background:#f8f9fa;"><th style="padding:8px; border:1px solid #ddd;">项目</th><th style="padding:8px; border:1px solid #ddd;">数量</th><th style="padding:8px; border:1px solid #ddd;">状态</th></tr>';
+
+            html += `<tr>
+                <td style="padding:8px; border:1px solid #ddd;">总消息数</td>
+                <td style="padding:8px; border:1px solid #ddd;">${messages.length}</td>
+                <td style="padding:8px; border:1px solid #ddd;">-</td>
+            </tr>`;
+
+            html += `<tr>
+                <td style="padding:8px; border:1px solid #ddd;">新Manus消息</td>
+                <td style="padding:8px; border:1px solid #ddd;">${manusMessages.length}</td>
+                <td style="padding:8px; border:1px solid #ddd; background:${manusMessages.length > 0 ? '#d4edda' : '#fff3cd'};">${manusMessages.length > 0 ? '✅ 正常' : '⚠️ 无消息'}</td>
+            </tr>`;
+
+            html += `<tr>
+                <td style="padding:8px; border:1px solid #ddd;">旧Assistant消息</td>
+                <td style="padding:8px; border:1px solid #ddd;">${oldAssistantMessages.length}</td>
+                <td style="padding:8px; border:1px solid #ddd; background:${oldAssistantMessages.length === 0 ? '#d4edda' : '#f8d7da'};">${oldAssistantMessages.length === 0 ? '✅ 已清理' : '❌ 需要修复'}</td>
+            </tr>`;
+
+            html += '</table>';
+
+            html += '<h4 style="margin-top: 20px;">详细信息:</h4>';
+            html += `<ul>`;
+            html += `<li><strong>当前Manus消息:</strong> ${currentManusMessage ? '存在' : '无'}</li>`;
+            html += `<li><strong>思考步骤数:</strong> ${thinkingSteps.length}</li>`;
+            html += `<li><strong>页面中的消息类型:</strong></li>`;
+            html += `<ul>`;
+            messages.forEach((msg, index) => {
+                const classes = Array.from(msg.classList).join(', ');
+                html += `<li>消息 ${index + 1}: ${classes}</li>`;
+            });
+            html += `</ul>`;
+            html += `</ul>`;
+
+            structureInfo.innerHTML = html;
+        }
+
+        // 页面加载完成后更新结构信息
+        document.addEventListener('DOMContentLoaded', function () {
+            updateStructureInfo();
+
+            console.log('消息结构测试页面已加载');
+            console.log('- 点击"创建新Manus消息"测试新结构');
+            console.log('- 检查是否还有旧的assistant-message结构');
+        });
+    </script>
+</body>
+
+</html>

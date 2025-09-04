@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>任务页面Logo测试</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="static/manus-main.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .test-chat {
+            max-width: 600px;
+            margin: 20px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>任务页面Logo显示测试</h1>
+
+    <div class="test-section">
+        <h2>动态创建Manus消息测试</h2>
+        <button onclick="createTestMessage()">创建测试消息</button>
+        <button onclick="createFailureTest()">测试logo加载失败</button>
+        <button onclick="clearMessages()">清空消息</button>
+    </div>
+
+    <div class="test-chat" id="testChat">
+        <!-- 测试消息将在这里显示 -->
+    </div>
+
+    <div class="test-section">
+        <h2>静态Manus头像测试</h2>
+        <div class="chat-message manus-message">
+            <div class="message-avatar">
+                <img src="/assets/logo.jpg" alt="Manus" class="manus-logo" id="staticLogo">
+            </div>
+            <div class="message-content">
+                <div class="message-text">这是一条静态测试消息</div>
+                <div class="message-time">15:30:45</div>
+            </div>
+        </div>
+
+        <div class="chat-message manus-message">
+            <div class="message-avatar manus-logo-fallback">
+                <!-- 这个显示备用方案 -->
+            </div>
+            <div class="message-content">
+                <div class="message-text">这是备用方案效果展示</div>
+                <div class="message-time">15:30:46</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="static/manus-main.js"></script>
+    <script>
+        let messageCount = 0;
+
+        function createTestMessage() {
+            const chatContainer = document.getElementById('testChat');
+            const messageId = 'test-msg-' + (++messageCount);
+
+            const manusMessage = document.createElement('div');
+            manusMessage.className = 'chat-message manus-message';
+            manusMessage.id = messageId;
+            manusMessage.innerHTML = `
+                <div class="message-avatar">
+                    <img src="/assets/logo.jpg" alt="Manus" class="manus-logo">
+                </div>
+                <div class="message-content">
+                    <div class="message-text">这是动态创建的测试消息 #${messageCount}</div>
+                    <div class="message-time">${new Date().toLocaleTimeString()}</div>
+                </div>
+            `;
+
+            chatContainer.appendChild(manusMessage);
+
+            // 设置logo备用方案
+            const logoElement = manusMessage.querySelector('.manus-logo');
+            setupManusLogoFallback(logoElement);
+
+            console.log('创建了测试消息:', messageId);
+        }
+
+        function createFailureTest() {
+            const chatContainer = document.getElementById('testChat');
+            const messageId = 'fail-test-msg-' + (++messageCount);
+
+            const manusMessage = document.createElement('div');
+            manusMessage.className = 'chat-message manus-message';
+            manusMessage.id = messageId;
+            manusMessage.innerHTML = `
+                <div class="message-avatar">
+                    <img src="/nonexistent-logo.jpg" alt="Manus" class="manus-logo">
+                </div>
+                <div class="message-content">
+                    <div class="message-text">这是logo加载失败测试消息 #${messageCount}</div>
+                    <div class="message-time">${new Date().toLocaleTimeString()}</div>
+                </div>
+            `;
+
+            chatContainer.appendChild(manusMessage);
+
+            // 设置logo备用方案
+            const logoElement = manusMessage.querySelector('.manus-logo');
+            setupManusLogoFallback(logoElement);
+
+            console.log('创建了失败测试消息:', messageId);
+        }
+
+        function clearMessages() {
+            document.getElementById('testChat').innerHTML = '';
+            messageCount = 0;
+            console.log('清空了所有测试消息');
+        }
+
+        // 为静态logo也设置备用方案
+        document.addEventListener('DOMContentLoaded', function () {
+            const staticLogo = document.getElementById('staticLogo');
+            if (staticLogo) {
+                setupManusLogoFallback(staticLogo);
+            }
+        });
+    </script>
+</body>
+
+</html>

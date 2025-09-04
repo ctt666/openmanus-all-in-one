@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manus API集成测试</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- 自定义样式 -->
+    <link rel="stylesheet" href="static/manus-main.css">
+</head>
+
+<body>
+    <!-- 主页面 -->
+    <div id="mainPage" class="main-page">
+        <!-- 导航栏 -->
+        <nav class="manus-navbar">
+            <div class="navbar-content">
+                <a class="navbar-brand" href="#">
+                    <img src="assets/logo.jpg" alt="OpenManus Logo" class="navbar-logo">
+                    <strong>OpenManus</strong>
+                </a>
+                <div class="navbar-actions">
+                    <button class="nav-button" id="themeToggle" onclick="toggleTheme()">
+                        <i class="bi bi-moon"></i>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 主要内容区域 -->
+        <div id="chat-home-view-container" class="chat-home-container">
+            <!-- 问候语 -->
+            <div class="greeting-section">
+                <div class="greeting-text">
+                    <span class="greeting-main">你好，开发者</span><br>
+                    <span class="greeting-sub">API集成测试页面</span>
+                </div>
+            </div>
+
+            <!-- 聊天输入区域 -->
+            <div class="chat-input-section">
+                <div class="chat-input-container">
+                    <div class="chat-input-wrapper">
+                        <div class="chat-input-box">
+                            <!-- 文本输入区域 -->
+                            <div class="textarea-container">
+                                <textarea class="chat-textarea" rows="2" placeholder="输入任务内容测试API集成"
+                                    id="mainTextarea"></textarea>
+                            </div>
+
+                            <!-- 工具栏 -->
+                            <div class="chat-toolbar">
+                                <div class="toolbar-left">
+                                    <!-- 附件按钮 -->
+                                    <button class="tool-button attachment-btn" data-tooltip="添加文件">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <path d="M13.234 20.252 21 12.3"></path>
+                                            <path
+                                                d="m16 6-8.414 8.586a2 2 0 0 0 0 2.828 2 2 0 0 0 2.828 0l8.414-8.586a4 4 0 0 0 0-5.656 4 4 0 0 0-5.656 0l-8.415 8.585a6 6 0 1 0 8.486 8.486">
+                                            </path>
+                                        </svg>
+                                    </button>
+
+                                    <!-- 模式选择器 -->
+                                    <div class="mode-selector">
+                                        <button class="mode-btn active" data-mode="search"
+                                            data-tooltip="自适应 - 智能适配即时答案和 Agent 模式">
+                                            <div class="mode-icon">
+                                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                                    <path
+                                                        d="M7.9987 8.66536C8.36689 8.66536 8.66536 8.36689 8.66536 7.9987C8.66536 7.63051 8.36689 7.33203 7.9987 7.33203C7.63051 7.33203 7.33203 7.63051 7.33203 7.9987C7.33203 8.36689 7.63051 8.66536 7.9987 8.66536Z"
+                                                        stroke="currentColor" stroke-width="1.33333"
+                                                        stroke-linecap="round" stroke-linejoin="round"></path>
+                                                    <path
+                                                        d="M13.4694 13.4694C14.8301 12.1154 13.4827 8.56028 10.4679 5.5321C7.43972 2.51725 3.8846 1.16991 2.53059 2.53059C1.16991 3.8846 2.51725 7.43972 5.5321 10.4679C8.56028 13.4827 12.1154 14.8301 13.4694 13.4694Z"
+                                                        stroke="currentColor" stroke-width="1.33333"
+                                                        stroke-linecap="round" stroke-linejoin="round"></path>
+                                                    <path
+                                                        d="M10.4679 10.4679C13.4827 7.43972 14.8301 3.8846 13.4694 2.53059C12.1154 1.16991 8.56028 2.51725 5.5321 5.5321C2.51725 8.56028 1.16991 12.1154 2.53059 13.4694C3.8846 14.8301 7.43972 13.4827 10.4679 10.4679Z"
+                                                        stroke="currentColor" stroke-width="1.33333"
+                                                        stroke-linecap="round" stroke-linejoin="round"></path>
+                                                </svg>
+                                            </div>
+                                        </button>
+                                        <button class="mode-btn" data-mode="agent" data-tooltip="Agent - 处理复杂任务并自主交付结果">
+                                            <div class="mode-icon">
+                                                <svg viewBox="0 0 16 16" fill="none" width="16" height="16">
+                                                    <g clip-path="url(#agent-icon)">
+                                                        <path
+                                                            d="M7.9987 8.66927C8.36689 8.66927 8.66536 8.37079 8.66536 8.0026C8.66536 7.63441 8.36689 7.33594 7.9987 7.33594C7.63051 7.33594 7.33203 7.63441 7.33203 8.0026C7.33203 8.37079 7.63051 8.66927 7.9987 8.66927Z"
+                                                            stroke="currentColor" stroke-width="1.33333"
+                                                            stroke-linecap="round" stroke-linejoin="round"></path>
+                                                        <path
+                                                            d="M10.4679 5.5321C7.43972 2.51725 3.8846 1.16991 2.53059 2.53059C1.16991 3.8846 2.51725 7.43972 5.5321 10.4679"
+                                                            stroke="currentColor" stroke-width="1.33333"
+                                                            stroke-linecap="round" stroke-linejoin="round"></path>
+                                                        <path
+                                                            d="M13.9043 13.6582L13.5625 12.7598H10.6523L10.3105 13.6777C10.1771 14.0358 10.0632 14.2783 9.96875 14.4053C9.87435 14.529 9.71973 14.5908 9.50488 14.5908C9.32259 14.5908 9.16146 14.5241 9.02148 14.3906C8.88151 14.2572 8.81152 14.1058 8.81152 13.9365C8.81152 13.8389 8.8278 13.738 8.86035 13.6338C8.8929 13.5296 8.94661 13.3848 9.02148 13.1992L10.8525 8.55078C10.9046 8.41732 10.9665 8.25781 11.0381 8.07227C11.113 7.88346 11.1911 7.72721 11.2725 7.60352C11.3571 7.47982 11.4661 7.38053 11.5996 7.30566C11.7363 7.22754 11.904 7.18848 12.1025 7.18848C12.3044 7.18848 12.472 7.22754 12.6055 7.30566C12.7422 7.38053 12.8512 7.47819 12.9326 7.59863C13.0173 7.71908 13.0872 7.84928 13.1426 7.98926C13.2012 8.12598 13.2744 8.3099 13.3623 8.54102L15.2324 13.1602C15.3789 13.5117 15.4521 13.7673 15.4521 13.9268C15.4521 14.0928 15.3822 14.2458 15.2422 14.3857C15.1055 14.5225 14.9395 14.5908 14.7441 14.5908C14.6302 14.5908 14.5326 14.5697 14.4512 14.5273C14.3698 14.4883 14.3014 14.4346 14.2461 14.3662C14.1908 14.2946 14.1305 14.1872 14.0654 14.0439C14.0036 13.8975 13.9499 13.7689 13.9043 13.6582ZM11.0332 11.6709H13.1719L12.0928 8.7168L11.0332 11.6709Z"
+                                                            fill="currentColor"></path>
+                                                    </g>
+                                                    <defs>
+                                                        <clipPath id="agent-icon">
+                                                            <rect width="16" height="16" fill="white"></rect>
+                                                        </clipPath>
+                                                    </defs>
+                                                </svg>
+                                            </div>
+                                        </button>
+                                        <button class="mode-btn" data-mode="chat"
+                                            data-tooltip="Chat - 回答日常问题或在开始任务前进行对话">
+                                            <div class="mode-icon">
+                                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                                    <path
+                                                        d="M14 10C14 10.3536 13.8595 10.6928 13.6095 10.9428C13.3594 11.1929 13.0203 11.3333 12.6667 11.3333H4.66667L2 14V3.33333C2 2.97971 2.14048 2.64057 2.39052 2.39052C2.64057 2.14048 2.97971 2 3.33333 2H12.6667C13.0203 2 13.3594 2.14048 13.6095 2.39052C13.8595 2.64057 14 2.97971 14 3.33333V10Z"
+                                                        stroke="currentColor" stroke-width="1.33333"
+                                                        stroke-linecap="round" stroke-linejoin="round"></path>
+                                                    <path d="M5.33337 6.66602H5.34004" stroke="currentColor"
+                                                        stroke-width="1.6" stroke-linecap="round"
+                                                        stroke-linejoin="round"></path>
+                                                    <path d="M8 6.66602H8.00667" stroke="currentColor"
+                                                        stroke-width="1.6" stroke-linecap="round"
+                                                        stroke-linejoin="round"></path>
+                                                    <path d="M10.6666 6.66602H10.6733" stroke="currentColor"
+                                                        stroke-width="1.6" stroke-linecap="round"
+                                                        stroke-linejoin="round"></path>
+                                                </svg>
+                                            </div>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="toolbar-right">
+                                    <!-- 质量设置 -->
+                                    <div class="quality-selector" data-tooltip="调整输出质量">
+                                        <span class="quality-text">质量</span>
+                                        <svg width="14" height="14" viewBox="0 0 24 25" fill="none"
+                                            class="quality-arrow">
+                                            <path d="M10.1992 18.6367L16.1992 12.6367L10.1992 6.63672"
+                                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                stroke-linejoin="round"></path>
+                                        </svg>
+                                    </div>
+
+                                    <!-- 语音按钮 -->
+                                    <button class="voice-button" data-tooltip="语音输入">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                            <line x1="12" x2="12" y1="19" y2="22"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 快速任务标签 -->
+            <div class="quick-tasks-section">
+                <div class="quick-tasks-container">
+                    <div class="quick-tasks-wrapper">
+                        <div class="quick-task-tag" data-tooltip="测试Chat模式">
+                            <div class="task-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                            </div>
+                            <span>Chat测试</span>
+                        </div>
+
+                        <div class="quick-task-tag" data-tooltip="测试Agent模式">
+                            <div class="task-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                    <path
+                                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <span>Agent测试</span>
+                        </div>
+
+                        <div class="quick-task-tag" data-tooltip="测试SSE连接">
+                            <div class="task-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                                    <path d="M2 17l10 5 10-5"></path>
+                                    <path d="M2 12l10 5 10-5"></path>
+                                </svg>
+                            </div>
+                            <span>SSE测试</span>
+                        </div>
+
+                        <div class="quick-task-tag" data-tooltip="测试历史记录">
+                            <div class="task-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12,6 12,12 16,14"></polyline>
+                                </svg>
+                            </div>
+                            <span>历史记录</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 任务执行页面 -->
+    <div id="taskPage" class="task-page" style="display: none;">
+        <!-- 动态生成的内容将在这里插入 -->
+    </div>
+
+    <!-- 加载覆盖层 -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p class="mt-3 text-white">正在处理您的任务...</p>
+        </div>
+    </div>
+
+    <!-- Mock API脚本 -->
+    <script>
+        // Mock API 响应
+        class MockAPIClient {
+            constructor() {
+                this.mockTasks = new Map();
+                this.mockFlows = new Map();
+                this.mockHistory = {
+                    chat_history: [
+                        {
+                            id: 'task_001',
+                            prompt: '帮我分析一下这个月的销售数据',
+                            created_at: new Date().toISOString(),
+                            status: 'completed'
+                        },
+                        {
+                            id: 'task_002',
+                            prompt: '制作一个关于AI发展的PPT',
+                            created_at: new Date(Date.now() - 86400000).toISOString(),
+                            status: 'completed'
+                        }
+                    ],
+                    flow_history: [
+                        {
+                            id: 'flow_001',
+                            prompt: '帮我规划一次日本旅行',
+                            created_at: new Date().toISOString(),
+                            status: 'running'
+                        },
+                        {
+                            id: 'flow_002',
+                            prompt: '分析竞品并制定营销策略',
+                            created_at: new Date(Date.now() - 172800000).toISOString(),
+                            status: 'completed'
+                        }
+                    ]
+                };
+            }
+
+            async createTask(prompt, mode, sessionId, chatHistory) {
+                console.log('Mock API: 创建任务', { prompt, mode, sessionId });
+
+                // 模拟网络延迟
+                await new Promise(resolve => setTimeout(resolve, 800));
+
+                const id = mode === 'agent' ?
+                    'flow_' + Math.random().toString(36).substr(2, 9) :
+                    'task_' + Math.random().toString(36).substr(2, 9);
+
+                const taskData = {
+                    id,
+                    prompt,
+                    mode,
+                    sessionId,
+                    status: 'created',
+                    created_at: new Date().toISOString()
+                };
+
+                if (mode === 'agent') {
+                    this.mockFlows.set(id, taskData);
+                } else {
+                    this.mockTasks.set(id, taskData);
+                }
+
+                return {
+                    success: true,
+                    data: mode === 'agent' ? { flow_id: id } : { task_id: id },
+                    id: id,
+                    type: mode === 'agent' ? 'flow' : 'task'
+                };
+            }
+
+            async handleInteraction(prompt, mode, taskId, flowId) {
+                console.log('Mock API: 处理交互', { prompt, mode, taskId, flowId });
+
+                // 模拟网络延迟
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                return {
+                    success: true,
+                    data: { status: 'success', message: 'Interaction received' }
+                };
+            }
+
+            async getHistory() {
+                console.log('Mock API: 获取历史记录');
+
+                // 模拟网络延迟
+                await new Promise(resolve => setTimeout(resolve, 600));
+
+                return {
+                    success: true,
+                    data: this.mockHistory
+                };
+            }
+
+            connectToEvents(id, type, onEvent, onError, onClose) {
+                console.log('Mock API: 连接SSE事件流', { id, type });
+
+                // 模拟task接口的SSE事件流
+                const mockEvents = [
+                    { type: 'think', result: '正在分析用户的任务需求...' },
+                    { type: 'think', result: '识别任务类型：这是一个信息查询类任务' },
+                    { type: 'think', result: '制定解决方案：需要搜集相关信息并整理回答' },
+                    { type: 'interaction', result: '开始执行任务，正在处理您的请求...' },
+                    { type: 'think', result: '分析关键词和上下文信息' },
+                    { type: 'think', result: '准备生成详细的回答内容' },
+                    { type: 'interaction', result: '正在整理信息，即将为您提供完整的答案。' },
+                    { type: 'complete', result: '任务执行完成！基于您的需求，我已经为您准备了详细的回答。这个模拟展示了完整的think-interaction-complete事件流程。' }
+                ];
+
+                let eventIndex = 0;
+                const interval = setInterval(() => {
+                    if (eventIndex < mockEvents.length) {
+                        onEvent(mockEvents[eventIndex]);
+                        eventIndex++;
+                    } else {
+                        clearInterval(interval);
+                    }
+                }, 1500);
+
+                // 返回一个模拟的EventSource对象
+                return {
+                    close: () => {
+                        clearInterval(interval);
+                        if (onClose) onClose();
+                    }
+                };
+            }
+
+            disconnectEvents(id) {
+                console.log('Mock API: 断开SSE连接', id);
+            }
+
+            disconnectAllEvents() {
+                console.log('Mock API: 断开所有SSE连接');
+            }
+
+            generateSessionId() {
+                return 'mock_session_' + Math.random().toString(36).substr(2, 9);
+            }
+        }
+
+        // 替换全局API客户端为Mock版本
+        window.apiClient = new MockAPIClient();
+
+        // 添加测试日志
+        console.log('🧪 Mock API客户端已加载，开始API集成测试');
+
+        // 添加快速测试按钮功能
+        document.addEventListener('DOMContentLoaded', function () {
+            const quickTasks = document.querySelectorAll('.quick-task-tag');
+            quickTasks.forEach(tag => {
+                tag.addEventListener('click', function () {
+                    const text = this.querySelector('span').textContent;
+                    const textarea = document.getElementById('mainTextarea');
+
+                    if (text === 'Chat测试') {
+                        textarea.value = '测试Chat模式：请回答什么是人工智能？';
+                        selectMode('search');
+                    } else if (text === 'Agent测试') {
+                        textarea.value = '测试Agent模式：帮我制定一个学习计划';
+                        selectMode('agent');
+                    } else if (text === 'SSE测试') {
+                        textarea.value = '测试SSE事件流：执行一个长时间任务并显示实时进度';
+                        selectMode('chat');
+                    } else if (text === '历史记录') {
+                        textarea.value = '测试历史记录加载功能';
+                        selectMode('search');
+                    }
+
+                    autoResizeTextarea(textarea);
+                });
+            });
+        });
+    </script>
+
+    <!-- 主要JavaScript文件 -->
+    <script src="static/manus-main.js"></script>
+
+    <style>
+        /* 测试页面特殊样式 */
+        .greeting-main {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .greeting-sub {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+        }
+
+        /* 测试标签特殊颜色 */
+        .quick-task-tag:nth-child(1) {
+            border-color: #28a745;
+        }
+
+        .quick-task-tag:nth-child(2) {
+            border-color: #007bff;
+        }
+
+        .quick-task-tag:nth-child(3) {
+            border-color: #ffc107;
+        }
+
+        .quick-task-tag:nth-child(4) {
+            border-color: #dc3545;
+        }
+
+        .quick-task-tag:nth-child(1):hover {
+            background-color: rgba(40, 167, 69, 0.1);
+        }
+
+        .quick-task-tag:nth-child(2):hover {
+            background-color: rgba(0, 123, 255, 0.1);
+        }
+
+        .quick-task-tag:nth-child(3):hover {
+            background-color: rgba(255, 193, 7, 0.1);
+        }
+
+        .quick-task-tag:nth-child(4):hover {
+            background-color: rgba(220, 53, 69, 0.1);
+        }
+
+        /* 确保任务页面初始隐藏 */
+        #taskPage {
+            display: none;
+        }
+    </style>
+</body>
+
+</html>
