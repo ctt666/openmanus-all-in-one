@@ -839,9 +839,9 @@ async def run_flow_task(
                         1
                     ].strip()
                 elif "Act content:" in cleaned_message:
-                    event_type = "think"
+                    event_type = "step"
                 elif "🔧 Activating tool:" in cleaned_message:
-                    event_type = "act"
+                    event_type = "step"
                 elif "📝 Oops!" in cleaned_message:
                     event_type = "error"
                 elif "Flow summary result:" in cleaned_message:
@@ -849,6 +849,8 @@ async def run_flow_task(
                 # 检测ask_human工具的执行结果
                 elif "Tool 'ask_human' completed its mission!" in cleaned_message:
                     event_type = "interaction"
+
+                print(f"🔍 最终事件类型: {event_type}, 内容: {cleaned_message}")
 
                 await flow_manager.update_flow_step(
                     self.flow_id, 0, cleaned_message, event_type
@@ -871,16 +873,16 @@ async def run_flow_task(
             )
 
         # 执行
-        start_time = datetime.now()
+        # start_time = datetime.now()
         result = await asyncio.wait_for(flow.execute(full_prompt), timeout=3600)
-        end_time = datetime.now()
-        await flow_manager.update_flow_step(
-            flow_id,
-            1,
-            f"Request processed in {(end_time - start_time).total_seconds():.2f} seconds",
-            "run",
-        )
-        await flow_manager.update_flow_step(flow_id, 1, result, "result")
+        # end_time = datetime.now()
+        # await flow_manager.update_flow_step(
+        #     flow_id,
+        #     1,
+        #     f"Request processed in {(end_time - start_time).total_seconds():.2f} seconds",
+        #     "run",
+        # )
+        # await flow_manager.update_flow_step(flow_id, 1, result, "result")
 
         # 处理ask_human - 检查是否因为 ask_human 工具而暂停了执行
         while result and "INTERACTION_REQUIRED:" in result:

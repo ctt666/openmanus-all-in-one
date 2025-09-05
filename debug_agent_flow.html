@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent流程调试页面</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="static/manus-main.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .debug-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .debug-header {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .debug-content {
+            padding: 20px;
+        }
+
+        .debug-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+
+        .debug-button {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+            transition: all 0.2s ease;
+        }
+
+        .debug-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+        }
+
+        .debug-log {
+            background: #f8f9fa;
+            border: 1px solid #e5e5e5;
+            border-radius: 6px;
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-success {
+            background: #28a745;
+        }
+
+        .status-error {
+            background: #dc3545;
+        }
+
+        .status-warning {
+            background: #ffc107;
+        }
+
+        .preview-container {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            height: 500px;
+            overflow: hidden;
+            background: white;
+        }
+
+        .preview-header {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-bottom: 1px solid #ddd;
+            font-weight: bold;
+        }
+
+        .preview-content {
+            height: calc(100% - 50px);
+            overflow-y: auto;
+            padding: 15px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="debug-container">
+        <div class="debug-header">
+            <h1>🔍 Agent流程调试页面</h1>
+            <p>调试前端交互问题：后端正常发送事件流但前端没有输出内容</p>
+        </div>
+
+        <div class="debug-content">
+            <!-- 调试操作 -->
+            <div class="debug-section">
+                <h3>🔧 调试操作</h3>
+                <div>
+                    <button class="debug-button" onclick="testPageElements()">检查页面元素</button>
+                    <button class="debug-button" onclick="testAgentMode()">测试Agent模式</button>
+                    <button class="debug-button" onclick="testSSEConnection()">测试SSE连接</button>
+                    <button class="debug-button" onclick="simulatePlanEvent()">模拟Plan事件</button>
+                    <button class="debug-button" onclick="clearDebugLog()">清空日志</button>
+                </div>
+            </div>
+
+            <!-- 调试日志 -->
+            <div class="debug-section">
+                <h3>📋 调试日志</h3>
+                <div class="debug-log" id="debugLog">
+                    点击调试按钮开始诊断...
+                </div>
+            </div>
+
+            <!-- 页面预览 -->
+            <div class="debug-section">
+                <h3>👀 页面预览</h3>
+                <div class="preview-container">
+                    <div class="preview-header">
+                        任务执行页面预览
+                    </div>
+                    <div class="preview-content" id="previewContent">
+                        <div id="mainPage" style="display: block;">
+                            <h3>主页面</h3>
+                            <p>这是主页面内容</p>
+                        </div>
+                        <div id="taskPage" style="display: none;">
+                            <h3>任务页面</h3>
+                            <div id="taskChatContainer">
+                                <p>任务聊天容器</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="static/manus-main.js"></script>
+    <script>
+        let debugLog = [];
+
+        // 添加调试日志
+        function addDebugLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const statusIcon = type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️';
+            debugLog.push(`[${timestamp}] ${statusIcon} ${message}`);
+            document.getElementById('debugLog').textContent = debugLog.join('\n');
+            document.getElementById('debugLog').scrollTop = document.getElementById('debugLog').scrollHeight;
+        }
+
+        // 检查页面元素
+        function testPageElements() {
+            addDebugLog('开始检查页面元素...');
+
+            // 检查主页面元素
+            const mainPage = document.getElementById('mainPage');
+            addDebugLog(`mainPage元素: ${mainPage ? '存在' : '不存在'}`, mainPage ? 'success' : 'error');
+
+            // 检查任务页面元素
+            const taskPage = document.getElementById('taskPage');
+            addDebugLog(`taskPage元素: ${taskPage ? '存在' : '不存在'}`, taskPage ? 'success' : 'error');
+
+            // 检查聊天容器元素
+            const taskChatContainer = document.getElementById('taskChatContainer');
+            addDebugLog(`taskChatContainer元素: ${taskChatContainer ? '存在' : '不存在'}`, taskChatContainer ? 'success' : 'error');
+
+            // 检查全局变量
+            addDebugLog(`currentManusMessage: ${window.currentManusMessage || 'null'}`);
+            addDebugLog(`currentMode: ${window.currentMode || 'undefined'}`);
+            addDebugLog(`currentTaskId: ${window.currentTaskId || 'null'}`);
+            addDebugLog(`currentFlowId: ${window.currentFlowId || 'null'}`);
+        }
+
+        // 测试Agent模式
+        function testAgentMode() {
+            addDebugLog('开始测试Agent模式...');
+
+            // 设置当前模式
+            window.currentMode = 'agent';
+            addDebugLog('设置currentMode为agent');
+
+            // 模拟显示任务页面
+            addDebugLog('调用showTaskPage...');
+            if (typeof showTaskPage === 'function') {
+                showTaskPage('测试任务', 'agent', 'test-task-123', 'flow');
+                addDebugLog('showTaskPage调用完成');
+            } else {
+                addDebugLog('showTaskPage函数不存在！', 'error');
+            }
+
+            // 检查任务页面是否显示
+            const taskPage = document.getElementById('taskPage');
+            const isVisible = taskPage && taskPage.style.display !== 'none';
+            addDebugLog(`任务页面是否可见: ${isVisible}`, isVisible ? 'success' : 'error');
+        }
+
+        // 测试SSE连接
+        function testSSEConnection() {
+            addDebugLog('开始测试SSE连接...');
+
+            // 检查API客户端
+            if (typeof apiClient === 'undefined') {
+                addDebugLog('apiClient未定义！', 'error');
+                return;
+            }
+
+            addDebugLog('apiClient存在');
+
+            // 检查connectToEvents方法
+            if (typeof apiClient.connectToEvents === 'function') {
+                addDebugLog('connectToEvents方法存在');
+            } else {
+                addDebugLog('connectToEvents方法不存在！', 'error');
+            }
+
+            // 检查handleTaskEvent函数
+            if (typeof handleTaskEvent === 'function') {
+                addDebugLog('handleTaskEvent函数存在');
+            } else {
+                addDebugLog('handleTaskEvent函数不存在！', 'error');
+            }
+        }
+
+        // 模拟Plan事件
+        function simulatePlanEvent() {
+            addDebugLog('开始模拟Plan事件...');
+
+            const planEvent = {
+                type: 'plan',
+                result: '我将分析销售数据并生成详细的报告。首先收集数据，然后进行统计分析，最后生成可视化图表。'
+            };
+
+            addDebugLog('Plan事件数据: ' + JSON.stringify(planEvent));
+
+            if (typeof handleTaskEvent === 'function') {
+                addDebugLog('调用handleTaskEvent...');
+                handleTaskEvent(planEvent);
+                addDebugLog('handleTaskEvent调用完成');
+            } else {
+                addDebugLog('handleTaskEvent函数不存在！', 'error');
+            }
+        }
+
+        // 清空调试日志
+        function clearDebugLog() {
+            debugLog = [];
+            document.getElementById('debugLog').textContent = '日志已清空...';
+        }
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function () {
+            addDebugLog('调试页面已加载');
+            addDebugLog('开始自动检查页面元素...');
+            testPageElements();
+        });
+    </script>
+</body>
+
+</html>

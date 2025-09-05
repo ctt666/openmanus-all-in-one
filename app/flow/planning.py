@@ -116,7 +116,9 @@ class PlanningFlow(BaseFlow):
                     )
                     return f"Failed to create plan for: {input_text}"
             else:
-                precede_step_result = self.__get_precede_step_result()
+                precede_step_result = await self.__get_precede_step_result(
+                    self.current_step_index
+                )
                 precede_step_result += input_text
 
             while True:
@@ -130,7 +132,7 @@ class PlanningFlow(BaseFlow):
                     result += step_result + "\n"
                     break
 
-                logger.info(f"Start executing step: {step_info}")
+                # logger.info(f"Start executing step: {step_info['text']}")
                 # Execute current step with appropriate agent
                 step_type = step_info.get("type") if step_info else None
                 executor = self.get_executor(step_type)
@@ -141,12 +143,12 @@ class PlanningFlow(BaseFlow):
                 if step_result and "INTERACTION_REQUIRED:" in step_result:
                     return step_result
 
-                precede_step_result = self.__get_precede_step_result(
+                precede_step_result = await self.__get_precede_step_result(
                     self.current_step_index
                 )
-                logger.info(
-                    f"Finish executing step {self.current_step_index}: {step_info}, result: {step_result}"
-                )
+                # logger.info(
+                #     f"Finish executing step {self.current_step_index}: {step_info['text']}"
+                # )
                 result += step_result + "\n"
 
             return result
@@ -292,11 +294,14 @@ class PlanningFlow(BaseFlow):
         plan_step = await self._get_plan_step()
         plan = await self._get_plan()
         # Create a prompt for the agent to execute the current step
-        step_prompt = self._format_plan_step(plan)
+        step_prompt = (
+            precede_step_result if precede_step_result else self._format_plan_step(plan)
+        )
 
         # Use agent.run() to execute the step
         try:
             logger.info(f"Start executing step:{plan_step}")
+            executor.state = AgentState.IDLE
             results = await executor.run(step_prompt)
 
             # Mark the step as completed after successful execution
@@ -317,6 +322,7 @@ class PlanningFlow(BaseFlow):
 
     async def __get_precede_step_result(self, step_index: int) -> str:
         """Get the result of the previous step."""
+        logger.info(f"Get the result of the previous step: {step_index}")
         plan_data = self.planning_tool.plans[self.active_plan_id]
         result = ""
         for i, (step, status, notes) in enumerate(

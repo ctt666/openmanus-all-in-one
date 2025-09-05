@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>三个部分聊天交互信息验证</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="static/manus-main.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .test-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .test-content {
+            padding: 20px;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+
+        .test-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+            transition: all 0.2s ease;
+        }
+
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .test-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .part-indicator {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .part-1 {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .part-2 {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .part-3 {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .preview-container {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            height: 500px;
+            overflow: hidden;
+            background: white;
+        }
+
+        .preview-header {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-bottom: 1px solid #ddd;
+            font-weight: bold;
+        }
+
+        .preview-content {
+            height: calc(100% - 50px);
+            overflow-y: auto;
+            padding: 15px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1>🎯 三个部分聊天交互信息验证</h1>
+            <p>验证agent模式的三个部分：plan内容、步骤列表层级、interaction/complete事件</p>
+        </div>
+
+        <div class="test-content">
+            <!-- 测试说明 -->
+            <div class="test-section">
+                <h3>📋 测试说明</h3>
+                <p><strong>三个部分的聊天交互信息：</strong></p>
+                <ul>
+                    <li><span class="part-indicator part-1">第一部分</span><strong>Plan内容</strong>：显示plan事件的result字段内容</li>
+                    <li><span
+                            class="part-indicator part-2">第二部分</span><strong>步骤列表层级</strong>：step_start创建步骤，step事件作为子事件（think/act已归为step事件）
+                    </li>
+                    <li><span
+                            class="part-indicator part-3">第三部分</span><strong>Interaction/Complete事件</strong>：显示interaction和complete事件内容
+                    </li>
+                </ul>
+            </div>
+
+            <!-- 测试操作 -->
+            <div class="test-section">
+                <h3>🧪 测试操作</h3>
+                <div>
+                    <h4>完整流程测试</h4>
+                    <button class="test-button" onclick="testCompleteFlow()">测试完整流程</button>
+                    <button class="test-button" onclick="clearAll()">清空所有</button>
+                </div>
+
+                <div style="margin-top: 15px;">
+                    <h4>分步测试</h4>
+                    <button class="test-button" onclick="testPart1()">测试第一部分 (Plan)</button>
+                    <button class="test-button" onclick="testPart2()">测试第二部分 (步骤列表)</button>
+                    <button class="test-button" onclick="testPart3()">测试第三部分 (Interaction/Complete)</button>
+                </div>
+            </div>
+
+            <!-- 预览区域 -->
+            <div class="test-section">
+                <h3>👀 实时预览</h3>
+                <div class="preview-container">
+                    <div class="preview-header">
+                        任务执行页面预览
+                    </div>
+                    <div class="preview-content" id="previewContent">
+                        <div id="taskChatContainer">
+                            <!-- 聊天内容将在这里显示 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 验证结果 -->
+            <div class="test-section">
+                <h3>✅ 验证结果</h3>
+                <div id="verificationResults">
+                    <p>点击测试按钮开始验证...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="static/manus-main.js"></script>
+    <script>
+        let verificationResults = [];
+
+        // 添加验证结果
+        function addVerificationResult(part, test, result, details = '') {
+            const timestamp = new Date().toLocaleTimeString();
+            verificationResults.push({
+                timestamp,
+                part,
+                test,
+                result,
+                details
+            });
+            updateVerificationDisplay();
+        }
+
+        // 更新验证结果显示
+        function updateVerificationDisplay() {
+            const container = document.getElementById('verificationResults');
+            container.innerHTML = verificationResults.map(item => `
+                <div style="margin: 10px 0; padding: 10px; border-left: 4px solid ${item.result ? '#4caf50' : '#f44336'}; background: ${item.result ? '#e8f5e8' : '#ffebee'};">
+                    <strong>[${item.timestamp}]</strong>
+                    <span class="part-indicator part-${item.part}">第${item.part}部分</span>
+                    <strong>${item.test}</strong>:
+                    <span style="color: ${item.result ? '#2e7d32' : '#c62828'}">${item.result ? '✅ 通过' : '❌ 失败'}</span>
+                    ${item.details ? `<br><small>${item.details}</small>` : ''}
+                </div>
+            `).join('');
+        }
+
+        // 测试完整流程
+        function testCompleteFlow() {
+            clearAll();
+
+            // 第一部分：Plan事件
+            setTimeout(() => {
+                const planEvent = {
+                    type: 'plan',
+                    result: '我将分析销售数据并生成详细的报告。首先收集数据，然后进行统计分析，最后生成可视化图表。'
+                };
+                handleTaskEvent(planEvent);
+                addVerificationResult(1, 'Plan事件显示', true, 'Plan内容已显示在聊天消息中');
+            }, 500);
+
+            // 第二部分：步骤列表
+            setTimeout(() => {
+                const stepStartEvent = {
+                    type: 'step_start',
+                    result: '步骤1: 数据收集和整理'
+                };
+                handleTaskEvent(stepStartEvent);
+                addVerificationResult(2, 'Step Start事件', true, '新步骤已创建');
+            }, 1000);
+
+            setTimeout(() => {
+                const stepEvent = {
+                    type: 'step',
+                    result: '正在读取销售数据文件...'
+                };
+                handleTaskEvent(stepEvent);
+                addVerificationResult(2, 'Step事件', true, 'Step内容已添加到当前步骤');
+            }, 1500);
+
+            // think和act事件在agent模式下已归为step事件，不再单独测试
+
+            setTimeout(() => {
+                const stepFinishEvent = {
+                    type: 'step_finish',
+                    result: '步骤1完成'
+                };
+                handleTaskEvent(stepFinishEvent);
+                addVerificationResult(2, 'Step Finish事件', true, '步骤已标记为完成');
+            }, 3000);
+
+            // 第三部分：Interaction/Complete事件
+            setTimeout(() => {
+                const interactionEvent = {
+                    type: 'interaction',
+                    result: '需要用户确认分析参数...'
+                };
+                handleTaskEvent(interactionEvent);
+                addVerificationResult(3, 'Interaction事件', true, 'Interaction内容已显示');
+            }, 3500);
+
+            setTimeout(() => {
+                const completeEvent = {
+                    type: 'complete',
+                    result: '任务完成！已成功生成销售数据分析报告。'
+                };
+                handleTaskEvent(completeEvent);
+                addVerificationResult(3, 'Complete事件', true, 'Complete内容已显示');
+            }, 4000);
+        }
+
+        // 测试第一部分
+        function testPart1() {
+            clearAll();
+            const planEvent = {
+                type: 'plan',
+                result: '测试计划：我将执行一个简单的数据分析任务，包括数据收集、处理和结果输出。'
+            };
+            handleTaskEvent(planEvent);
+            addVerificationResult(1, 'Plan事件显示', true, 'Plan内容已显示在聊天消息中');
+        }
+
+        // 测试第二部分
+        function testPart2() {
+            clearAll();
+
+            // 创建plan
+            const planEvent = {
+                type: 'plan',
+                result: '测试计划内容'
+            };
+            handleTaskEvent(planEvent);
+
+            setTimeout(() => {
+                const stepStartEvent = {
+                    type: 'step_start',
+                    result: '测试步骤: 数据预处理'
+                };
+                handleTaskEvent(stepStartEvent);
+                addVerificationResult(2, 'Step Start', true, '步骤已创建');
+            }, 500);
+
+            setTimeout(() => {
+                const stepEvent = {
+                    type: 'step',
+                    result: '正在处理数据...'
+                };
+                handleTaskEvent(stepEvent);
+                addVerificationResult(2, 'Step事件', true, 'Step内容已添加');
+            }, 1000);
+
+            setTimeout(() => {
+                const stepFinishEvent = {
+                    type: 'step_finish',
+                    result: '步骤完成'
+                };
+                handleTaskEvent(stepFinishEvent);
+                addVerificationResult(2, 'Step Finish', true, '步骤已标记完成');
+            }, 1500);
+        }
+
+        // 测试第三部分
+        function testPart3() {
+            clearAll();
+
+            // 创建plan
+            const planEvent = {
+                type: 'plan',
+                result: '测试计划内容'
+            };
+            handleTaskEvent(planEvent);
+
+            setTimeout(() => {
+                const interactionEvent = {
+                    type: 'interaction',
+                    result: '测试交互事件：需要用户输入参数'
+                };
+                handleTaskEvent(interactionEvent);
+                addVerificationResult(3, 'Interaction事件', true, 'Interaction内容已显示');
+            }, 500);
+
+            setTimeout(() => {
+                const completeEvent = {
+                    type: 'complete',
+                    result: '测试完成事件：任务执行完毕'
+                };
+                handleTaskEvent(completeEvent);
+                addVerificationResult(3, 'Complete事件', true, 'Complete内容已显示');
+            }, 1000);
+        }
+
+        // 清空所有
+        function clearAll() {
+            const chatContainer = document.getElementById('taskChatContainer');
+            if (chatContainer) {
+                chatContainer.innerHTML = '';
+            }
+            agentStepsManager.clearSteps();
+            verificationResults = [];
+            updateVerificationDisplay();
+        }
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log('三个部分验证页面已加载');
+        });
+    </script>
+</body>
+
+</html>

@@ -2991,6 +2991,614 @@ body {
     background: #777;
 }
 
+/* ===== Agent模式样式 ===== */
+
+/* CSS变量定义 */
+:root {
+    --text-primary: #1f2937;
+    --text-secondary: #6b7280;
+    --text-tertiary: #9ca3af;
+    --text-disable: #d1d5db;
+    --border-dark: #d1d5db;
+    --border-light: #e5e7eb;
+    --fill-tsp-gray-main: #f3f4f6;
+    --fill-tsp-gray-dark: #e5e7eb;
+    --fill-tsp-white-dark: #f9fafb;
+    --icon-white: #ffffff;
+    --icon-white-tsp: #f9fafb;
+}
+
+/* Tailwind CSS 类支持 */
+.flex {
+    display: flex;
+}
+
+.flex-col {
+    flex-direction: column;
+}
+
+.flex-row {
+    flex-direction: row;
+}
+
+.flex-1 {
+    flex: 1 1 0%;
+}
+
+.flex-shrink-0 {
+    flex-shrink: 0;
+}
+
+.items-center {
+    align-items: center;
+}
+
+.justify-center {
+    justify-content: center;
+}
+
+.justify-between {
+    justify-content: space-between;
+}
+
+.gap-2 {
+    gap: 0.5rem;
+}
+
+.gap-3 {
+    gap: 0.75rem;
+}
+
+.gap-4 {
+    gap: 1rem;
+}
+
+.w-full {
+    width: 100%;
+}
+
+.w-4 {
+    width: 1rem;
+}
+
+.w-\[24px\] {
+    width: 24px;
+}
+
+.w-\[21px\] {
+    width: 21px;
+}
+
+.h-4 {
+    height: 1rem;
+}
+
+.h-\[24px\] {
+    height: 24px;
+}
+
+.h-\[28px\] {
+    height: 28px;
+}
+
+.min-w-0 {
+    min-width: 0px;
+}
+
+.max-w-full {
+    max-width: 100%;
+}
+
+.max-w-\[100\%\] {
+    max-width: 100%;
+}
+
+.overflow-hidden {
+    overflow: hidden;
+}
+
+.truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.relative {
+    position: relative;
+}
+
+.absolute {
+    position: absolute;
+}
+
+.inline-flex {
+    display: inline-flex;
+}
+
+.text-sm {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+}
+
+.text-\[12px\] {
+    font-size: 12px;
+}
+
+.text-\[13px\] {
+    font-size: 13px;
+}
+
+.font-medium {
+    font-weight: 500;
+}
+
+.font-mono {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+}
+
+.rounded-\[15px\] {
+    border-radius: 15px;
+}
+
+.rounded-\[8px\] {
+    border-radius: 8px;
+}
+
+.border {
+    border-width: 1px;
+}
+
+.border-l {
+    border-left-width: 1px;
+}
+
+.border-dashed {
+    border-style: dashed;
+}
+
+.px-\[10px\] {
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.py-\[3px\] {
+    padding-top: 3px;
+    padding-bottom: 3px;
+}
+
+.pt-2 {
+    padding-top: 0.5rem;
+}
+
+.ml-\[6px\] {
+    margin-left: 6px;
+}
+
+.top-\[-1px\] {
+    top: -1px;
+}
+
+.start-\[8px\] {
+    left: 8px;
+}
+
+.top-0 {
+    top: 0px;
+}
+
+.bottom-0 {
+    bottom: 0px;
+}
+
+.transition {
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+}
+
+.transition-transform {
+    transition-property: transform;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+}
+
+.duration-300 {
+    transition-duration: 300ms;
+}
+
+.duration-150 {
+    transition-duration: 150ms;
+}
+
+.ease-in-out {
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.invisible {
+    visibility: hidden;
+}
+
+.group\/header:hover .group-hover\/header\:visible {
+    visibility: visible;
+}
+
+.group:hover .group-hover\:visible {
+    visibility: visible;
+}
+
+.clickable {
+    cursor: pointer;
+}
+
+.float-right {
+    float: right;
+}
+
+[data-theme="dark"] {
+    --text-primary: #f9fafb;
+    --text-secondary: #d1d5db;
+    --text-tertiary: #9ca3af;
+    --text-disable: #4b5563;
+    --border-dark: #374151;
+    --border-light: #4b5563;
+    --fill-tsp-gray-main: #1f2937;
+    --fill-tsp-gray-dark: #111827;
+    --fill-tsp-white-dark: #1f2937;
+    --icon-white: #ffffff;
+    --icon-white-tsp: #f9fafb;
+}
+
+/* Agent模式消息容器 */
+.agent-mode-message {
+    margin: 8px 0;
+    padding: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+/* Agent步骤容器 */
+.agent-steps-container {
+    margin: 12px 0;
+    padding: 0;
+}
+
+.agent-steps-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Agent步骤样式 */
+.agent-step {
+    border: none;
+    border-radius: 12px;
+    background: #f8f9fa;
+    overflow: hidden;
+    transition: all 0.2s ease;
+    margin-bottom: 8px;
+}
+
+.agent-step:hover {
+    background: #f0f1f2;
+}
+
+.agent-step.completed {
+    background: #f0f9f0;
+}
+
+.agent-step.in_progress {
+    background: #f0f4ff;
+}
+
+/* 步骤头部 */
+.step-header {
+    display: flex;
+    align-items: center;
+    padding: 16px 20px;
+    cursor: pointer;
+    user-select: none;
+    gap: 12px;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+}
+
+.step-header:hover {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+/* 步骤状态图标 */
+.step-status-icon {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.status-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    background: #e9ecef;
+    border: 2px solid #dee2e6;
+    color: #6c757d;
+}
+
+.status-icon.completed {
+    background: #28a745;
+    border-color: #28a745;
+    color: white;
+}
+
+.status-icon.in-progress {
+    background: #007bff;
+    border-color: #007bff;
+    color: white;
+}
+
+.status-icon.pending {
+    background: #e9ecef;
+    border-color: #dee2e6;
+    color: #6c757d;
+}
+
+/* 步骤内容 */
+.step-content {
+    flex: 1;
+    font-size: 14px;
+    color: #333;
+    line-height: 1.5;
+    font-weight: 500;
+}
+
+/* 步骤展开/折叠按钮 */
+.step-toggle {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+    transition: transform 0.3s ease;
+    border-radius: 4px;
+}
+
+.step-toggle:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.step-toggle i {
+    font-size: 16px;
+    transition: transform 0.3s ease;
+}
+
+/* 子事件容器 */
+.step-sub-events {
+    border: none;
+    background: transparent;
+    padding: 0;
+    margin-left: 24px;
+    position: relative;
+}
+
+.step-sub-events::before {
+    content: '';
+    position: absolute;
+    left: -12px;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: repeating-linear-gradient(to bottom,
+            #d1d5db 0px,
+            #d1d5db 4px,
+            transparent 4px,
+            transparent 8px);
+}
+
+/* 子事件样式 */
+.sub-event {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    margin: 4px 0;
+    gap: 8px;
+    border-radius: 8px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    transition: all 0.2s ease;
+}
+
+.sub-event:hover {
+    background: #f9fafb;
+    border-color: #d1d5db;
+}
+
+.sub-event-icon {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.sub-event-content {
+    flex: 1;
+    font-size: 13px;
+    color: #374151;
+    line-height: 1.4;
+}
+
+/* 子事件类型样式 */
+.sub-event.step {
+    background: #f3e5f5;
+}
+
+.sub-event.step .sub-event-icon {
+    color: #9c27b0;
+}
+
+/* think和act事件在agent模式下已归为step事件，不再需要单独样式 */
+
+/* 暗色主题适配 */
+[data-theme="dark"] .agent-step {
+    background: #2d2d2d;
+    border-color: #404040;
+}
+
+[data-theme="dark"] .agent-step:hover {
+    border-color: #555;
+    box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .agent-step.completed {
+    border-color: #28a745;
+    background: #1a2e1a;
+}
+
+[data-theme="dark"] .agent-step.in_progress {
+    border-color: #007bff;
+    background: #1a1f2e;
+}
+
+[data-theme="dark"] .step-header:hover {
+    background: #333;
+}
+
+[data-theme="dark"] .step-content {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .step-toggle {
+    color: #999;
+}
+
+[data-theme="dark"] .step-sub-events {
+    background: #333;
+    border-color: #404040;
+}
+
+[data-theme="dark"] .sub-event {
+    border-color: #404040;
+}
+
+[data-theme="dark"] .sub-event-content {
+    color: #cccccc;
+}
+
+[data-theme="dark"] .sub-event.step {
+    background: #2a1a2e;
+}
+
+/* think和act事件在agent模式下已归为step事件，不再需要单独样式 */
+
+/* ===== Agent模式聊天消息样式 ===== */
+
+/* Agent聊天消息容器 */
+.agent-chat-message {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px 20px;
+    margin: 8px 0;
+    border-radius: 12px;
+    background: #f8f9fa;
+    border: none;
+}
+
+/* Agent消息图标 */
+.agent-message-icon {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+/* Agent消息内容 */
+.agent-message-content {
+    flex: 1;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #333;
+}
+
+/* 不同类型的消息样式 */
+.agent-plan-message {
+    background: #f0f4ff;
+}
+
+.agent-step-message {
+    background: #f8f0ff;
+}
+
+.agent-interaction-message {
+    background: #fff8f0;
+}
+
+.agent-complete-message {
+    background: #f0fff0;
+}
+
+.agent-summary-message {
+    background: #fff0f8;
+}
+
+.agent-default-message {
+    background: #f5f5f5;
+}
+
+/* 暗色主题适配 */
+[data-theme="dark"] .agent-chat-message {
+    background: #2d2d2d;
+    color: #ffffff;
+}
+
+[data-theme="dark"] .agent-message-content {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .agent-plan-message {
+    background: #1a1f2e;
+    border-left-color: #2196f3;
+}
+
+[data-theme="dark"] .agent-step-message {
+    background: #2a1a2e;
+    border-left-color: #9c27b0;
+}
+
+[data-theme="dark"] .agent-interaction-message {
+    background: #2e2a1a;
+    border-left-color: #ff9800;
+}
+
+[data-theme="dark"] .agent-complete-message {
+    background: #1a2e1a;
+    border-left-color: #4caf50;
+}
+
+[data-theme="dark"] .agent-summary-message {
+    background: #2e1a1f;
+    border-left-color: #e91e63;
+}
+
+[data-theme="dark"] .agent-default-message {
+    background: #2a2a2a;
+    border-left-color: #9e9e9e;
+}
+
 [data-theme="dark"] .chat-message-name {
     color: #ffffff;
 }

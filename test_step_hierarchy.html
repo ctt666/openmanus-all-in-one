@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>步骤层级展示测试</title>
+    <link rel="stylesheet" href="static/manus-main.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+        }
+
+        .test-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .test-button:hover {
+            background: #0056b3;
+        }
+
+        .test-button.secondary {
+            background: #6c757d;
+        }
+
+        .test-button.secondary:hover {
+            background: #545b62;
+        }
+
+        .log-container {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 2px 0;
+        }
+
+        .log-entry.info {
+            color: #007bff;
+        }
+
+        .log-entry.success {
+            color: #28a745;
+        }
+
+        .log-entry.warning {
+            color: #ffc107;
+        }
+
+        .log-entry.error {
+            color: #dc3545;
+        }
+
+        .agent-steps-container {
+            margin: 15px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+
+        .agent-steps-list {
+            min-height: 100px;
+        }
+
+        .manus-response-content {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="test-container">
+        <h1>步骤层级展示测试</h1>
+
+        <div class="test-section">
+            <div class="test-title">1. 模拟步骤事件</div>
+            <button class="test-button" onclick="testStepStart()">模拟 step_start 事件</button>
+            <button class="test-button" onclick="testStepFinish()">模拟 step_finish 事件</button>
+            <button class="test-button" onclick="testStepEvent()">模拟 step 事件</button>
+            <button class="test-button secondary" onclick="clearSteps()">清空步骤</button>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">2. 模拟完整流程</div>
+            <button class="test-button" onclick="testCompleteFlow()">模拟完整流程</button>
+            <button class="test-button secondary" onclick="resetTest()">重置测试</button>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">3. 步骤展示区域</div>
+            <div class="agent-steps-container">
+                <div class="agent-steps-list" id="agentStepsList">
+                    <!-- 步骤列表将在这里动态生成 -->
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">4. 响应内容区域</div>
+            <div class="manus-response-content" id="responseContent">
+                <!-- 响应内容将在这里显示 -->
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">5. 调试日志</div>
+            <div class="log-container" id="logContainer">
+                <div class="log-entry info">测试页面已加载，可以开始测试步骤层级展示功能</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="static/manus-main.js"></script>
+    <script>
+        // 测试用的全局变量
+        let testStepIndex = 0;
+        let testStepId = 1;
+
+        // 日志函数
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('logContainer');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        // 模拟 step_start 事件
+        function testStepStart() {
+            testStepIndex++;
+            const stepContent = `步骤 ${testStepIndex}: 执行具体任务`;
+
+            const event = {
+                type: 'step_start',
+                result: stepContent,
+                timestamp: Date.now()
+            };
+
+            log(`发送 step_start 事件: ${stepContent}`, 'info');
+            handleStepStartEvent(event);
+        }
+
+        // 模拟 step_finish 事件
+        function testStepFinish() {
+            const event = {
+                type: 'step_finish',
+                result: '步骤执行完成',
+                timestamp: Date.now()
+            };
+
+            log(`发送 step_finish 事件`, 'info');
+            handleStepFinishEvent(event);
+        }
+
+        // 模拟 step 事件
+        function testStepEvent() {
+            const stepContent = `Activating tool: python_execute\nargs: {"code": "print('Hello World')"}`;
+
+            const event = {
+                type: 'step',
+                result: stepContent,
+                timestamp: Date.now()
+            };
+
+            log(`发送 step 事件: ${stepContent}`, 'info');
+            handleStepEvent(event);
+        }
+
+        // 清空步骤
+        function clearSteps() {
+            agentStepsManager.clearSteps();
+            updateAgentStepsUI();
+            log('已清空所有步骤', 'warning');
+        }
+
+        // 模拟完整流程
+        function testCompleteFlow() {
+            log('开始模拟完整流程...', 'info');
+
+            // 1. 创建计划
+            const planEvent = {
+                type: 'plan',
+                result: '计划创建结果: 周末计划 (ID: plan_123456)',
+                timestamp: Date.now()
+            };
+            handlePlanEvent(planEvent);
+
+            // 2. 开始第一个步骤
+            setTimeout(() => {
+                const stepStartEvent = {
+                    type: 'step_start',
+                    result: '制定周末具体计划 (例如: 列出每日任务)',
+                    timestamp: Date.now()
+                };
+                handleStepStartEvent(stepStartEvent);
+
+                // 3. 添加步骤事件
+                setTimeout(() => {
+                    const stepEvent1 = {
+                        type: 'step',
+                        result: 'Activating tool: python_execute\nargs: {"code": "print(\'生成周末计划\')"}',
+                        timestamp: Date.now()
+                    };
+                    handleStepEvent(stepEvent1);
+
+                    setTimeout(() => {
+                        const stepEvent2 = {
+                            type: 'step',
+                            result: 'Activating tool: str_replace_editor\nargs: {"command": "create", "path": "/tmp/weekend_plan.txt"}',
+                            timestamp: Date.now()
+                        };
+                        handleStepEvent(stepEvent2);
+
+                        // 4. 完成第一个步骤
+                        setTimeout(() => {
+                            const stepFinishEvent = {
+                                type: 'step_finish',
+                                result: '步骤执行完成',
+                                timestamp: Date.now()
+                            };
+                            handleStepFinishEvent(stepFinishEvent);
+
+                            // 5. 开始第二个步骤
+                            setTimeout(() => {
+                                const stepStartEvent2 = {
+                                    type: 'step_start',
+                                    result: '进行户外活动 (如散步、骑行)',
+                                    timestamp: Date.now()
+                                };
+                                handleStepStartEvent(stepStartEvent2);
+
+                                setTimeout(() => {
+                                    const stepEvent3 = {
+                                        type: 'step',
+                                        result: 'Activating tool: weather_check\nargs: {"location": "北京"}',
+                                        timestamp: Date.now()
+                                    };
+                                    handleStepEvent(stepEvent3);
+
+                                    setTimeout(() => {
+                                        const stepFinishEvent2 = {
+                                            type: 'step_finish',
+                                            result: '步骤执行完成',
+                                            timestamp: Date.now()
+                                        };
+                                        handleStepFinishEvent(stepFinishEvent2);
+
+                                        log('完整流程模拟完成', 'success');
+                                    }, 1000);
+                                }, 1000);
+                            }, 1000);
+                        }, 1000);
+                    }, 1000);
+                }, 1000);
+            }, 1000);
+        }
+
+        // 重置测试
+        function resetTest() {
+            agentStepsManager.clearSteps();
+            updateAgentStepsUI();
+            document.getElementById('responseContent').innerHTML = '';
+            document.getElementById('logContainer').innerHTML = '<div class="log-entry info">测试已重置</div>';
+            testStepIndex = 0;
+            testStepId = 1;
+            log('测试已重置', 'info');
+        }
+
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function () {
+            log('测试页面加载完成', 'success');
+            log('可以点击按钮测试步骤层级展示功能', 'info');
+        });
+    </script>
+</body>
+
+</html>
