@@ -171,3 +171,4 @@ class Manus(ToolCallAgent):
         if self._initialized:
             await self.disconnect_mcp_server()
             self._initialized = False
+        self.memory.clear

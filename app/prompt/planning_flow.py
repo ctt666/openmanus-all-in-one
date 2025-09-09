@@ -11,8 +11,8 @@ Total number of executors: {agents_len}
 
 🚨 CRITICAL RULE:
 1. Use the `planning` tool to create the plan.
-2. Each step must clearly specify the executor,  must be followed by the executor's name in the format '[executor_name]'.
-   Example: Step 1: Gather relevant materials [Flow].
+2. Each step must clearly specify the executor,  must be followed by the executor's name in the format '[executor_name]' and without serial number.
+   Example: Gather relevant materials [Flow].
 3. Steps should be clear, actionable, and independent of each other.
 4. Answer in the same language as the '{request}'.
 """

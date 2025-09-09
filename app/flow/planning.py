@@ -1,5 +1,4 @@
 import json
-import logging
 import time
 from enum import Enum
 from typing import Dict, List, Optional, Union
@@ -100,7 +99,6 @@ class PlanningFlow(BaseFlow):
             if not self.primary_agent:
                 raise ValueError("No primary agent available")
 
-            result = ""
             precede_step_result = ""
             # Create initial plan if input provided
             if not input_text:
@@ -127,17 +125,18 @@ class PlanningFlow(BaseFlow):
 
                 # Exit if no more steps or plan completed
                 if self.current_step_index is None:
-                    step_result = await self._finalize_plan()
-                    logger.info(f"Flow summary result: {step_result}")
-                    result += step_result + "\n"
-                    break
+                    summary_result = await self._finalize_plan()
+                    logger.info(f"Flow summary result: {summary_result}")
+                    return summary_result
 
                 # logger.info(f"Start executing step: {step_info['text']}")
                 # Execute current step with appropriate agent
                 step_type = step_info.get("type") if step_info else None
+                logger.debug(f"Step type: {step_type}")
                 executor = self.get_executor(step_type)
                 step_result = await self._execute_step(executor, precede_step_result)
-                self.__update_current_step_result(step_result)
+                logger.info(f"Step result: {step_result}")
+                await self.__update_current_step_result(step_result)
 
                 # 判断ask_human
                 if step_result and "INTERACTION_REQUIRED:" in step_result:
@@ -149,9 +148,6 @@ class PlanningFlow(BaseFlow):
                 # logger.info(
                 #     f"Finish executing step {self.current_step_index}: {step_info['text']}"
                 # )
-                result += step_result + "\n"
-
-            return result
         except Exception as e:
             logger.error(f"Error in PlanningFlow: {str(e)}")
             return f"Execution failed: {str(e)}"
@@ -167,7 +163,7 @@ class PlanningFlow(BaseFlow):
                     f"- {key.upper()}: {self.agents[key].description}\n"
                 )
         system_message_content = planning_flow.PLANNING_SYSTEM_PROMPT
-        # logging.info(f"_create_initial_plan prompt:\n{system_message_content}")
+        # logger.info(f"_create_initial_plan prompt:\n{system_message_content}")
         # Create a system message for plan creation
         system_message = Message.system_message(system_message_content)
 
@@ -259,7 +255,8 @@ class PlanningFlow(BaseFlow):
                     # Try to extract step type from the text (e.g., [SEARCH] or [CODE])
                     import re
 
-                    type_match = re.search(r"\[([A-Z_]+)\]", step)
+                    # 匹配方括号中的类型标记,支持中文描述后的类型标记
+                    type_match = re.search(r".*\[([A-Z_]+)\]", step)
                     if type_match:
                         step_info["type"] = type_match.group(1).lower()
 
@@ -304,7 +301,7 @@ class PlanningFlow(BaseFlow):
                 "directory": config.workspace_root,
             }
         )
-        logging.info(f"Step prompt: {step_prompt}, context: {precede_step_result}")
+        logger.info(f"Step prompt: {step_prompt}, context: {precede_step_result}")
 
         # Use agent.run() to execute the step
         try:
@@ -316,6 +313,7 @@ class PlanningFlow(BaseFlow):
             # 判断是否式因为交互而暂停的
             if results and "INTERACTION_REQUIRED:" not in results:
                 await self._mark_step_completed()
+                await executor.clean_up()
                 logger.info(f"Finish executing step:{plan_step}")
 
             return results
@@ -470,10 +468,12 @@ class PlanningFlow(BaseFlow):
                 workspace=config.workspace_root, plan_text=plan_text
             )
             summary = await agent.run(summary_prompt)
-            return f"Plan completed:\n\n{summary}"
+            return summary
         except Exception as e2:
             logger.error(f"Error finalizing plan with agent: {e2}")
             return "Plan completed. Error generating summary."
+        finally:
+            await agent.clean_up()
 
     def _format_plan_step(self, plan: Dict):
         """Format a todo step of the plan for display."""

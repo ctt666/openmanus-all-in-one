@@ -1,6 +1,5 @@
 import asyncio
 import json
-import logging
 import os
 import threading
 import time
@@ -30,6 +29,7 @@ from app.agent.flow_agent import FlowAgent
 from app.agent.manus import Manus
 from app.config import config
 from app.flow.flow_factory import FlowFactory, FlowType
+from app.logger import logger
 from app.schema import AgentState
 
 # 导入 AskHuman 工具
@@ -365,8 +365,8 @@ class FlowManager:
             self.interactions[flow_id]["responded"] = True
 
             # 新增：调试日志
-            logging.info(f"Flow {flow_id}: User response received: {user_response}")
-            logging.info(
+            logger.info(f"Flow {flow_id}: User response received: {user_response}")
+            logger.info(
                 f"Flow {flow_id}: Interactions state: {self.interactions[flow_id]}"
             )
 
@@ -376,11 +376,11 @@ class FlowManager:
                 await ask_human_tool.set_user_response(user_response)
                 # 清除工具引用
                 del self.ask_human_tools[flow_id]
-                logging.info(
+                logger.info(
                     f"Flow {flow_id}: Ask_human tool response set, tool reference cleared"
                 )
             else:
-                logging.info(
+                logger.info(
                     f"Flow {flow_id}: No ask_human tool waiting, but interaction state set"
                 )
 
@@ -393,10 +393,10 @@ class FlowManager:
                     "timestamp": timestamp,
                 }
             )
-            logging.info(f"Flow {flow_id}: Interaction response event queued")
+            logger.info(f"Flow {flow_id}: Interaction response event queued")
             return True
         else:
-            logging.error(f"Flow {flow_id}: Flow not found in handle_interaction")
+            logger.error(f"Flow {flow_id}: Flow not found in handle_interaction")
             return False
 
     # 新增：注册 ask_human 工具
@@ -846,14 +846,23 @@ async def run_flow_task(
                     ].strip()
                 elif "Act content:" in cleaned_message:
                     event_type = "step"
+                elif "Step result:" in cleaned_message:
+                    cleaned_message = cleaned_message.split("Step result:")[1].strip()
+                    event_type = "step"
                 elif "🔧 Activating tool:" in cleaned_message:
                     event_type = "step"
                 elif "📝 Oops!" in cleaned_message:
                     event_type = "error"
-                elif "Flow summary result:" in cleaned_message:
-                    event_type = "summary"
+                # elif "Flow summary result:" in cleaned_message:
+                #     event_type = "summary"
                 # 检测ask_human工具的执行结果
-                elif "Tool 'ask_human' completed its mission!" in cleaned_message:
+                elif (
+                    "Tool 'ask_human' completed its mission! Result: INTERACTION_REQUIRED:"
+                    in cleaned_message
+                ):
+                    cleaned_message = cleaned_message.split(
+                        "Tool 'ask_human' completed its mission! Result: INTERACTION_REQUIRED:"
+                    )[1].strip()
                     event_type = "interaction"
 
                 print(f"🔍 最终事件类型: {event_type}, 内容: {cleaned_message}")
@@ -996,7 +1005,7 @@ async def run_flow_task(
             flow_id, "Request processing timed out after 1 hour"
         )
     except Exception as e:
-        logging.error(f"Error in run_flow_task: {str(e)}")
+        logger.error(f"Error in run_flow_task: {str(e)}")
         await flow_manager.fail_flow(flow_id, str(e))
     finally:
         # 清理流程注册

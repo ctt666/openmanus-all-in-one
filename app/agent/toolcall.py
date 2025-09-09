@@ -83,7 +83,8 @@ class ToolCallAgent(ReActAgent):
         if response and response.reasoning_content:
             logger.info(f"✨ {self.name}'s thoughts: {response.reasoning_content}")
 
-        logger.info(f"Act content: {content}")
+        if content:
+            logger.info(f"Act content: {content}")
         # Log response info
         logger.info(
             f"🛠️ {self.name} selected {len(tool_calls) if tool_calls else 0} tools to use"
@@ -162,13 +163,13 @@ class ToolCallAgent(ReActAgent):
             )
 
             # Add tool response to memory
-            tool_msg = Message.tool_message(
-                content=result,
-                tool_call_id=command.id,
-                name=command.function.name,
-                base64_image=self._current_base64_image,
-            )
-            self.memory.add_message(tool_msg)
+            # tool_msg = Message.tool_message(
+            #     content=result,
+            #     tool_call_id=command.id,
+            #     name=command.function.name,
+            #     base64_image=self._current_base64_image,
+            # )
+            # self.memory.add_message(tool_msg)
             results.append(result)
 
         return "\n\n".join(results)

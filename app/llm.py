@@ -1,4 +1,3 @@
-import logging
 import math
 from typing import Dict, List, Optional, Union
 
@@ -263,6 +262,44 @@ class LLM:
 
         return "Token limit exceeded"
 
+    def truncate_messages(self, messages: List[dict], max_tokens: int) -> List[dict]:
+        """
+        Truncate messages to fit within token limit while preserving most recent interactions.
+
+        Args:
+            messages: List of messages to truncate
+            max_tokens: Maximum allowed tokens
+
+        Returns:
+            List[dict]: Truncated list of messages
+        """
+        # Always keep system messages if present
+        system_messages = [m for m in messages if m["role"] == "system"]
+        non_system_messages = [m for m in messages if m["role"] != "system"]
+
+        # Calculate tokens for system messages
+        system_tokens = self.count_message_tokens(system_messages)
+        remaining_tokens = max_tokens - system_tokens
+
+        # If no space for other messages, return only system messages
+        if remaining_tokens <= 0:
+            logger.warning("Token limit only allows system messages")
+            return system_messages
+
+        # Start from most recent messages and work backwards
+        truncated_messages = []
+        current_tokens = 0
+
+        for message in reversed(non_system_messages):
+            message_tokens = self.count_message_tokens([message])
+            if current_tokens + message_tokens <= remaining_tokens:
+                truncated_messages.insert(0, message)
+                current_tokens += message_tokens
+            else:
+                break
+
+        return system_messages + truncated_messages
+
     @staticmethod
     def format_messages(
         messages: List[Union[dict, Message]], supports_images: bool = False
@@ -396,11 +433,12 @@ class LLM:
 
             # Calculate input token count
             input_tokens = self.count_message_tokens(messages)
-            # Check if token limits are exceeded
-            if not self.check_token_limit(input_tokens):
-                error_message = self.get_limit_error_message(input_tokens)
-                # Raise a special exception that won't be retried
-                raise TokenLimitExceeded(error_message)
+
+            # If token limit exceeded, truncate messages
+            if self.max_input_tokens and input_tokens > self.max_input_tokens:
+                messages = self.truncate_messages(messages, self.max_input_tokens)
+                input_tokens = self.count_message_tokens(messages)
+                logger.debug(f"input tokens after truncate: {input_tokens}")
 
             params = {
                 "model": self.model,
@@ -415,8 +453,9 @@ class LLM:
                     temperature if temperature is not None else self.temperature
                 )
 
+            logger.debug(f"*****************llm params: {params}")
             if stream:
-                # logging.info(f"llm request prompt: {messages}")
+                # logger.info(f"llm request prompt: {messages}")
                 # Streaming request
                 try:
                     completion: ChatCompletion = (
@@ -449,9 +488,9 @@ class LLM:
                     return final_response
 
                 except Exception as e:
-                    logging.error(f"Error in streaming response: {e}")
+                    logger.error(f"Error in streaming response: {e}")
                     # 如果流式处理失败，尝试非流式请求作为备选
-                    logging.info("Falling back to non-streaming request")
+                    logger.info("Falling back to non-streaming request")
                     try:
                         completion: ChatCompletion = (
                             await self.client.chat.completions.create(
@@ -468,14 +507,14 @@ class LLM:
                         )
                         return response_content
                     except Exception as fallback_error:
-                        logging.error(f"Fallback request also failed: {fallback_error}")
+                        logger.error(f"Fallback request also failed: {fallback_error}")
                         raise fallback_error
 
             response = await self.client.chat.completions.create(**params, stream=False)
             print(f"*****************llm response: {response}")
 
             if not response.choices or not response.choices[0].message:
-                logging.error(response)
+                logger.error(response)
                 # raise ValueError("Invalid or empty response from LLM")
                 return None
             # Update token counts
@@ -483,7 +522,7 @@ class LLM:
                 response.usage.prompt_tokens, response.usage.completion_tokens
             )
 
-            logging.info(f"response content: {response.choices[0].message.content}")
+            logger.debug(f"response content: {response.choices[0].message.content}")
             return response.choices[0].message
 
         except TokenLimitExceeded:
@@ -594,8 +633,13 @@ class LLM:
 
             # Calculate tokens and check limits
             input_tokens = self.count_message_tokens(all_messages)
-            if not self.check_token_limit(input_tokens):
-                raise TokenLimitExceeded(self.get_limit_error_message(input_tokens))
+
+            # If token limit exceeded, truncate messages
+            if self.max_input_tokens and input_tokens > self.max_input_tokens:
+                all_messages = self.truncate_messages(
+                    all_messages, self.max_input_tokens
+                )
+                input_tokens = self.count_message_tokens(all_messages)
 
             # Set up API parameters
             params = {
@@ -720,17 +764,14 @@ class LLM:
                 for tool in tools:
                     tools_tokens += self.count_tokens(str(tool))
             input_tokens += tools_tokens
-            # Check if token limits are exceeded
-            if not self.check_token_limit(input_tokens):
-                error_message = self.get_limit_error_message(input_tokens)
-                # Raise a special exception that won't be retried
-                raise TokenLimitExceeded(error_message)
 
-            # Validate tools if provided
-            if tools:
-                for tool in tools:
-                    if not isinstance(tool, dict) or "type" not in tool:
-                        raise ValueError("Each tool must be a dict with 'type' field")
+            # If token limit exceeded, truncate messages
+            if self.max_input_tokens and input_tokens > self.max_input_tokens:
+                messages = self.truncate_messages(
+                    messages, self.max_input_tokens - tools_tokens
+                )
+                input_tokens = self.count_message_tokens(messages) + tools_tokens
+                logger.debug(f"input tokens after truncate: {input_tokens}")
 
             # Set up the completion request
             params = {
@@ -741,7 +782,7 @@ class LLM:
                 "timeout": timeout,
                 **kwargs,
             }
-            # logging.info(f"llm request prompt: {messages}")
+            # logger.info(f"llm request prompt: {messages}")
             if self.model in REASONING_MODELS:
                 params["max_completion_tokens"] = self.max_tokens
             else:
@@ -751,14 +792,14 @@ class LLM:
                 )
 
             params["stream"] = False  # Always use non-streaming for tool requests
-            print(f"*****************llm params: {params}")
+            logger.debug(f"*****************llm params: {params}")
             response = await self.client.chat.completions.create(
                 **params,
             )
             # print(f"*****************llm response: {response}")
             # Check if response is valid
             if not response.choices or not response.choices[0].message:
-                logging.error(response)
+                logger.error(response)
                 # raise ValueError("Invalid or empty response from LLM")
                 return None
 
@@ -767,7 +808,7 @@ class LLM:
                 response.usage.prompt_tokens, response.usage.completion_tokens
             )
 
-            logging.info(
+            logger.debug(
                 f"response content: {response.choices[0].message.content}, tools: {response.choices[0].message.tool_calls}"
             )
             return response.choices[0].message

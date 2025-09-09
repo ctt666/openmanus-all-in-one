@@ -1,8 +1,8 @@
-import logging
 import sys
 
+from app.logger import logger
 
-logging.basicConfig(level=logging.INFO, handlers=[logging.StreamHandler(sys.stderr)])
+logging.basicConfig(level=logger.info, handlers=[logging.StreamHandler(sys.stderr)])
 
 import argparse
 import asyncio
