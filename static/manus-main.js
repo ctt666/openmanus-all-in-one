@@ -1,4 +1,37 @@
 // Manus主页面交互逻辑
+
+// --- Stagewise Toolbar Initialization (Vanilla JS) ---
+// 定义基本配置
+const stagewiseConfig = { plugins: [] };
+
+// 仅在开发模式下初始化
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.port === '5172') {
+    try {
+        // 检查是否已经初始化
+        if (!document.getElementById('stagewise-toolbar-root-vanilla')) {
+            // 动态导入 Stagewise 工具栏（使用本地文件）
+            import('/static/stagewise/stagewise-toolbar.js').then(stagewiseCore => {
+                if (stagewiseCore.initToolbar) {
+                    stagewiseCore.initToolbar(stagewiseConfig);
+                    // 标记初始化已完成
+                    const marker = document.createElement('div');
+                    marker.id = 'stagewise-toolbar-root-vanilla';
+                    marker.style.display = 'none';
+                    document.body.appendChild(marker);
+                    console.log('Stagewise Toolbar (Vanilla JS) initialized via automatic setup.');
+                } else {
+                    console.error('Stagewise initToolbar function not found in module');
+                }
+            }).catch(error => {
+                console.error('Failed to load Stagewise Toolbar:', error);
+            });
+        }
+    } catch (error) {
+        console.error('Failed to initialize Stagewise Toolbar (Vanilla JS):', error);
+    }
+}
+// --- End Stagewise Initialization ---
+
 // 全局变量
 let isDarkMode = false;
 let mainTextarea = null;
@@ -1402,8 +1435,9 @@ function initializeTaskPage(taskId = null, taskType = null) {
         // 加载步骤数据
         const stepsLoaded = agentStepsManager.loadSteps(taskId);
         if (stepsLoaded && agentSteps.length > 0) {
-            console.log('步骤数据已加载，更新UI');
-            updateAgentStepsUI();
+            console.log('步骤数据已加载，恢复历史步骤');
+            // 恢复历史消息中的步骤列表
+            restoreHistoricalSteps();
         }
     } else {
         // 模拟助手回复（用于测试）
@@ -1503,10 +1537,12 @@ let agentStepsManager = {
     },
 
     // 清空步骤
-    clearSteps: function () {
+    clearSteps: function (clearStorage = false) {
         agentSteps = [];
         currentStepIndex = -1;
-        this.saveSteps(); // 保存到localStorage
+        if (clearStorage) {
+            this.saveSteps(); // 保存到localStorage（实际上是清空）
+        }
     },
 
     // 保存步骤到localStorage
@@ -1518,7 +1554,7 @@ let agentStepsManager = {
             // 如果还是没有，尝试从URL获取
             if (!taskId) {
                 const urlParams = new URLSearchParams(window.location.search);
-                taskId = urlParams.get('taskId');
+                taskId = urlParams.get('taskId') || urlParams.get('flowId');
             }
 
             // 如果还是没有，使用默认值
@@ -1550,11 +1586,16 @@ let agentStepsManager = {
                 possibleKeys.push(`manusAgentSteps_${taskId}`);
             }
 
-            // 尝试从URL获取taskId
+            // 尝试从URL获取taskId和flowId
             const urlParams = new URLSearchParams(window.location.search);
             const urlTaskId = urlParams.get('taskId');
+            const urlFlowId = urlParams.get('flowId');
+
             if (urlTaskId && !possibleKeys.includes(`manusAgentSteps_${urlTaskId}`)) {
                 possibleKeys.push(`manusAgentSteps_${urlTaskId}`);
+            }
+            if (urlFlowId && !possibleKeys.includes(`manusAgentSteps_${urlFlowId}`)) {
+                possibleKeys.push(`manusAgentSteps_${urlFlowId}`);
             }
 
             // 尝试当前的任务ID
@@ -1847,6 +1888,15 @@ function handleInteractionEvent(event) {
 
         // 保存到聊天历史
         chatHistoryManager.addMessage('manus', event.result);
+
+        // 创建新的消息容器，用于显示后续的步骤
+        console.log('🔄 创建新的消息容器用于后续步骤');
+        createAgentModeMessage();
+
+        // 在新消息容器中更新步骤列表（只显示进行中和待处理的步骤）
+        console.log('🔄 在新消息容器中更新步骤列表');
+        updateAgentStepsUIForNewMessage();
+
         console.log('✅ interaction事件内容已添加到聊天界面');
     } else {
         console.log('⚠️ interaction事件没有result字段:', event);
@@ -1932,14 +1982,14 @@ function handlePlanEvent(event) {
     if (event.result) {
         console.log('🔍 开始处理plan事件，内容:', event.result);
 
-        // 清空之前的步骤
-        agentStepsManager.clearSteps();
+        // 清空之前的步骤（清除localStorage，因为这是开始新的任务）
+        agentStepsManager.clearSteps(true);
 
         // 创建agent模式的消息容器
         console.log('🔍 调用createAgentModeMessage...');
         createAgentModeMessage();
 
-        // 第一部分：添加计划内容到聊天消息
+        // 第一部分：添加计划内容到聊天消息（显示在顶部）
         console.log('🔍 调用addAgentChatMessage...');
         addAgentChatMessage('plan', event.result);
 
@@ -2202,6 +2252,9 @@ function createAgentModeMessage() {
     // 清除当前的openmanus消息引用
     clearCurrentManusMessage();
 
+    // 创建新的消息队列，不清空旧的（保留在旧消息容器中）
+    messageQueue = [];
+
     currentManusMessage = document.createElement('div');
     currentManusMessage.className = 'chat-message-block agent-mode-message';
     currentManusMessage.innerHTML = `
@@ -2209,12 +2262,12 @@ function createAgentModeMessage() {
             <img src="/assets/logo.jpg" alt="OpenManus" class="chat-message-logo">
             <span class="chat-message-name">OpenManus</span>
         </div>
+        <div class="manus-response-content"></div>
         <div class="agent-steps-container">
             <div class="agent-steps-list" id="agentStepsList">
                 <!-- 步骤列表将在这里动态生成 -->
             </div>
         </div>
-        <div class="manus-response-content"></div>
     `;
 
     chatContainer.appendChild(currentManusMessage);
@@ -2337,30 +2390,153 @@ function addContentToCurrentMessage(content) {
 }
 
 /**
- * 更新agent步骤UI
+ * 更新agent步骤UI（显示所有步骤，包括已完成的）
  */
 function updateAgentStepsUI() {
     console.log('🔄 更新agent步骤UI');
     console.log('🔄 当前agentSteps数组:', agentSteps);
     console.log('🔄 当前步骤索引:', currentStepIndex);
 
-    const stepsList = document.getElementById('agentStepsList');
-    if (!stepsList) {
-        console.log('⚠️ 找不到agentStepsList元素');
+    // 只更新当前消息容器中的步骤列表
+    if (!currentManusMessage) {
+        console.log('⚠️ 没有当前消息容器，跳过步骤UI更新');
         return;
     }
+
+    const stepsList = currentManusMessage.querySelector('#agentStepsList');
+    if (!stepsList) {
+        console.log('⚠️ 当前消息容器中找不到agentStepsList元素');
+        return;
+    }
+
+    // 保存当前展开状态
+    const expandedSteps = new Set();
+    const existingSteps = stepsList.querySelectorAll('[data-step-id]');
+    existingSteps.forEach(stepElement => {
+        const stepId = stepElement.dataset.stepId;
+        const subEvents = document.getElementById(`subEvents_${stepId}`);
+        if (subEvents && subEvents.style.display !== 'none') {
+            expandedSteps.add(stepId);
+        }
+    });
+
+    console.log('🔄 保存的展开状态:', Array.from(expandedSteps));
 
     // 清空现有内容
     stepsList.innerHTML = '';
 
-    // 遍历所有步骤并创建UI
-    agentSteps.forEach((step, index) => {
-        console.log(`🔄 创建步骤元素 ${index}:`, step);
-        const stepElement = createStepElement(step, index);
-        stepsList.appendChild(stepElement);
-    });
+    // 显示所有步骤（包括已完成的），用于初始消息和历史消息
+    console.log('🔄 显示所有步骤（包括已完成的）:', agentSteps);
+
+    // 如果有步骤，显示步骤容器；否则隐藏
+    const stepsContainer = stepsList.parentElement;
+    if (agentSteps.length > 0) {
+        stepsContainer.style.display = 'block';
+
+        // 遍历所有步骤并创建UI
+        agentSteps.forEach((step, index) => {
+            console.log(`🔄 创建步骤元素 ${index}:`, step);
+            const stepElement = createStepElement(step, index);
+            stepsList.appendChild(stepElement);
+
+            // 恢复展开状态
+            if (expandedSteps.has(step.id.toString())) {
+                const subEvents = document.getElementById(`subEvents_${step.id}`);
+                const chevron = document.querySelector(`[data-step-id="${step.id}"] .step-chevron`);
+                const subContent = document.querySelector(`[data-step-id="${step.id}"] .step-sub-content`);
+
+                if (subEvents && subContent) {
+                    subEvents.style.display = 'flex';
+                    subContent.style.maxHeight = '1000px';
+                    subContent.style.opacity = '1';
+                    if (chevron) {
+                        chevron.style.transform = 'rotate(180deg)';
+                    }
+                    console.log(`🔄 恢复步骤 ${step.id} 的展开状态`);
+                }
+            }
+        });
+    } else {
+        stepsContainer.style.display = 'none';
+    }
 
     console.log('🔄 步骤UI更新完成，共创建', agentSteps.length, '个步骤');
+    scrollChatToBottom();
+}
+
+/**
+ * 更新agent步骤UI（只显示活跃步骤，用于ask_human交互后的新消息容器）
+ */
+function updateAgentStepsUIForNewMessage() {
+    console.log('🔄 更新agent步骤UI（新消息容器）');
+    console.log('🔄 当前agentSteps数组:', agentSteps);
+    console.log('🔄 当前步骤索引:', currentStepIndex);
+
+    // 只更新当前消息容器中的步骤列表
+    if (!currentManusMessage) {
+        console.log('⚠️ 没有当前消息容器，跳过步骤UI更新');
+        return;
+    }
+
+    const stepsList = currentManusMessage.querySelector('#agentStepsList');
+    if (!stepsList) {
+        console.log('⚠️ 当前消息容器中找不到agentStepsList元素');
+        return;
+    }
+
+    // 保存当前展开状态
+    const expandedSteps = new Set();
+    const existingSteps = stepsList.querySelectorAll('[data-step-id]');
+    existingSteps.forEach(stepElement => {
+        const stepId = stepElement.dataset.stepId;
+        const subEvents = document.getElementById(`subEvents_${stepId}`);
+        if (subEvents && subEvents.style.display !== 'none') {
+            expandedSteps.add(stepId);
+        }
+    });
+
+    console.log('🔄 保存的展开状态（新消息容器）:', Array.from(expandedSteps));
+
+    // 清空现有内容
+    stepsList.innerHTML = '';
+
+    // 只显示进行中和待处理的步骤，不显示已完成的步骤（用于ask_human交互后的新消息）
+    const activeSteps = agentSteps.filter(step => step.status !== 'completed');
+    console.log('🔄 过滤后的活跃步骤（新消息容器）:', activeSteps);
+
+    // 如果有活跃步骤，显示步骤容器；否则隐藏
+    const stepsContainer = stepsList.parentElement;
+    if (activeSteps.length > 0) {
+        stepsContainer.style.display = 'block';
+
+        // 遍历活跃步骤并创建UI
+        activeSteps.forEach((step, index) => {
+            console.log(`🔄 创建步骤元素 ${index}:`, step);
+            const stepElement = createStepElement(step, index);
+            stepsList.appendChild(stepElement);
+
+            // 恢复展开状态
+            if (expandedSteps.has(step.id.toString())) {
+                const subEvents = document.getElementById(`subEvents_${step.id}`);
+                const chevron = document.querySelector(`[data-step-id="${step.id}"] .step-chevron`);
+                const subContent = document.querySelector(`[data-step-id="${step.id}"] .step-sub-content`);
+
+                if (subEvents && subContent) {
+                    subEvents.style.display = 'flex';
+                    subContent.style.maxHeight = '1000px';
+                    subContent.style.opacity = '1';
+                    if (chevron) {
+                        chevron.style.transform = 'rotate(180deg)';
+                    }
+                    console.log(`🔄 恢复步骤 ${step.id} 的展开状态（新消息容器）`);
+                }
+            }
+        });
+    } else {
+        stepsContainer.style.display = 'none';
+    }
+
+    console.log('🔄 步骤UI更新完成（新消息容器），共创建', activeSteps.length, '个活跃步骤');
     scrollChatToBottom();
 }
 
@@ -2380,14 +2556,14 @@ function createStepElement(step, index) {
 
     // 展开/折叠按钮 - 所有步骤都显示按钮
     const hasSubEvents = step.subEvents && step.subEvents.length > 0;
-    const toggleButton = `<span class="flex-shrink-0 flex">
+    const toggleButton = `<span class="flex-shrink-0 flex cursor-pointer" onclick="toggleStep(${step.id})">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down transition-transform duration-300 w-4 h-4 step-chevron">
             <path d="m6 9 6 6 6-6"></path>
         </svg>
     </span>`;
 
     stepDiv.innerHTML = `
-        <div class="text-sm w-full clickable flex gap-2 justify-between group/header truncate text-[var(--text-primary)]" data-event-id="${step.id}" onclick="toggleStep(${step.id})">
+        <div class="text-sm w-full flex gap-2 justify-between group/header truncate text-[var(--text-primary)]" data-event-id="${step.id}">
             <div class="flex flex-row gap-2 justify-center items-center truncate">
                 <div class="w-4 h-4 flex-shrink-0 flex items-center justify-center border-[var(--border-dark)] rounded-[15px] bg-[var(--text-disable)] dark:bg-[var(--fill-tsp-white-dark)] border-0">
                     ${statusIcon}
@@ -2399,7 +2575,7 @@ function createStepElement(step, index) {
         </div>
         <div class="flex" id="subEvents_${step.id}" style="display: none;">
             <div class="w-[24px] relative">
-                <div class="border-l border-dashed border-[var(--border-dark)] absolute start-[8px] top-0 bottom-0" style="height: calc(100% + 14px);"></div>
+                <div class="border-l border-dashed border-gray-300 absolute start-[8px] top-0 bottom-0" style="height: calc(100% + 14px);"></div>
             </div>
             <div class="flex flex-col gap-3 flex-1 min-w-0 overflow-hidden pt-2 transition-[max-height,opacity] duration-150 ease-in-out step-sub-content" style="max-height: 0; opacity: 0;">
                 ${createSubEventsHTML(step.subEvents)}
@@ -2442,7 +2618,7 @@ function createSubEventsHTML(subEvents) {
         return `
             <div class="flex items-center group gap-2 w-full" data-event-id="${event.id || index}">
                 <div class="flex-1 min-w-0">
-                    <div class="rounded-[15px] px-[10px] py-[3px] border border-[var(--border-light)] bg-[var(--fill-tsp-gray-main)] inline-flex max-w-full gap-[4px] items-center relative h-[28px] overflow-hidden clickable hover:bg-[var(--fill-tsp-gray-dark)] dark:hover:bg-white/[0.02]" data-event-id="${event.id || index}">
+                    <div class="px-[10px] py-[3px] inline-flex max-w-full gap-[4px] items-center relative h-[28px] overflow-hidden" data-event-id="${event.id || index}">
                         <div class="w-[21px] inline-flex items-center flex-shrink-0 text-[var(--text-primary)]">
                             ${eventIcon}
                         </div>
@@ -2555,6 +2731,9 @@ function formatMessageContent(content) {
         .replace(/\n/g, '<br>');
 }
 
+// 消息队列，用于按优先级排序
+let messageQueue = [];
+
 /**
  * 添加agent模式的聊天消息
  */
@@ -2572,55 +2751,98 @@ function addAgentChatMessage(type, content) {
         }
     }
 
+    // 将消息添加到队列中
+    const message = {
+        type: type,
+        content: content,
+        timestamp: Date.now()
+    };
+
+    messageQueue.push(message);
+
+    // 按优先级排序：plan(1) -> step(2) -> 其他(3)
+    // 相同优先级内按时间顺序排列
+    messageQueue.sort((a, b) => {
+        const getPriority = (type) => {
+            switch (type) {
+                case 'plan': return 1;
+                case 'step': return 2;
+                default: return 3;
+            }
+        };
+        const priorityA = getPriority(a.type);
+        const priorityB = getPriority(b.type);
+
+        // 如果优先级相同，按时间顺序排列
+        if (priorityA === priorityB) {
+            return a.timestamp - b.timestamp;
+        }
+
+        return priorityA - priorityB;
+    });
+
+    // 重新渲染所有消息
+    renderOrderedMessages();
+}
+
+/**
+ * 按顺序渲染消息
+ */
+function renderOrderedMessages() {
     const responseContent = currentManusMessage.querySelector('.manus-response-content');
-    console.log('🔍 responseContent元素:', responseContent);
     if (!responseContent) {
         console.error('❌ 没有找到响应内容容器！');
         return;
     }
 
-    // 格式化内容
-    const formattedContent = formatMessageContent(content);
+    // 清空现有内容
+    responseContent.innerHTML = '';
 
-    // 根据类型添加不同的样式
-    let messageClass = '';
-    let icon = '';
+    // 按顺序渲染消息
+    messageQueue.forEach(message => {
+        const formattedContent = formatMessageContent(message.content);
 
-    switch (type) {
-        case 'plan':
-            messageClass = 'agent-plan-message';
-            icon = '📋';
-            break;
-        case 'step':
-            messageClass = 'agent-step-message';
-            icon = '📝';
-            break;
-        case 'interaction':
-            messageClass = 'agent-interaction-message';
-            icon = '🔄';
-            break;
-        case 'complete':
-            messageClass = 'agent-complete-message';
-            icon = '🏁';
-            break;
-        case 'summary':
-            messageClass = 'agent-summary-message';
-            icon = '📊';
-            break;
-        default:
-            messageClass = 'agent-default-message';
-            icon = '💬';
-    }
+        // 根据类型添加不同的样式
+        let messageClass = '';
+        let icon = '';
 
-    // 创建消息元素
-    const messageElement = document.createElement('div');
-    messageElement.className = `agent-chat-message ${messageClass}`;
-    messageElement.innerHTML = `
-        <div class="agent-message-icon">${icon}</div>
-        <div class="agent-message-content">${formattedContent}</div>
-    `;
+        switch (message.type) {
+            case 'plan':
+                messageClass = 'agent-plan-message';
+                icon = '📋';
+                break;
+            case 'step':
+                messageClass = 'agent-step-message';
+                icon = '📝';
+                break;
+            case 'interaction':
+                messageClass = 'agent-interaction-message';
+                icon = '🔄';
+                break;
+            case 'complete':
+                messageClass = 'agent-complete-message';
+                icon = '🏁';
+                break;
+            case 'summary':
+                messageClass = 'agent-summary-message';
+                icon = '📊';
+                break;
+            default:
+                messageClass = 'agent-default-message';
+                icon = '💬';
+        }
 
-    responseContent.appendChild(messageElement);
+        // 创建消息元素
+        const messageElement = document.createElement('div');
+        messageElement.className = `agent-chat-message ${messageClass}`;
+        messageElement.innerHTML = `
+            <div class="agent-message-icon">${icon}</div>
+            <div class="agent-message-content">${formattedContent}</div>
+        `;
+
+        responseContent.appendChild(messageElement);
+    });
+
     scrollChatToBottom();
 }
 
@@ -2877,8 +3099,9 @@ function checkAndRestoreTaskPage() {
                 // 加载步骤数据
                 const stepsLoaded = agentStepsManager.loadSteps(restoreTaskId);
                 if (stepsLoaded && agentSteps.length > 0) {
-                    console.log('恢复任务时步骤数据已加载，更新UI');
-                    updateAgentStepsUI();
+                    console.log('恢复任务时步骤数据已加载，恢复历史步骤');
+                    // 恢复历史消息中的步骤列表
+                    restoreHistoricalSteps();
                 }
             } else {
                 console.log('任务信息不完整，显示主页面');
@@ -3057,6 +3280,9 @@ function selectHistoryItem(id, type) {
     // 清空聊天界面（UI）
     clearChatContainer();
 
+    // 清除localStorage中的步骤数据（因为这是开始新的历史记录）
+    agentStepsManager.clearSteps(true);
+
     // 设置当前任务ID
     if (type === 'chat') {
         currentTaskId = id;
@@ -3140,8 +3366,8 @@ function clearChatContainer() {
     // 清除当前的openmanus消息引用
     clearCurrentManusMessage();
 
-    // 清空agent步骤
-    agentStepsManager.clearSteps();
+    // 清空agent步骤（不清除localStorage，因为这是恢复历史时的清空）
+    agentStepsManager.clearSteps(false);
 
     console.log('聊天容器已清空');
 }
@@ -3181,8 +3407,32 @@ function restoreChatInterface(history) {
                 break;
 
             case 'manus':
-                // 添加内容到当前openmanus消息
-                addContentToCurrentMessage(message.content);
+                // 检查是否是Agent模式，如果是则创建Agent模式消息结构
+                if (currentMode === 'agent') {
+                    // 创建Agent模式消息容器
+                    const agentMessage = document.createElement('div');
+                    agentMessage.className = 'agent-mode-message';
+                    agentMessage.innerHTML = `
+                        <div class="chat-message-header">
+                            <img src="/assets/logo.jpg" alt="OpenManus" class="chat-message-logo">
+                            <span class="chat-message-name">OpenManus</span>
+                        </div>
+                        <div class="manus-response-content">${message.content}</div>
+                        <div class="agent-steps-container">
+                            <div class="agent-steps-list" id="agentStepsList">
+                                <!-- 步骤列表将在这里动态生成 -->
+                            </div>
+                        </div>
+                    `;
+                    chatContainer.appendChild(agentMessage);
+
+                    // 设置logo备用方案
+                    const logoElements = agentMessage.querySelectorAll('img');
+                    logoElements.forEach(logo => setupManusLogoFallback(logo));
+                } else {
+                    // 普通模式，使用原有逻辑
+                    addContentToCurrentMessage(message.content);
+                }
                 break;
 
             case 'thinking':
@@ -3192,7 +3442,61 @@ function restoreChatInterface(history) {
         }
     });
 
+    // 恢复历史消息中的步骤列表
+    restoreHistoricalSteps();
+
     scrollChatToBottom();
+}
+
+/**
+ * 恢复历史消息中的步骤列表
+ */
+function restoreHistoricalSteps() {
+    console.log('🔄 恢复历史消息中的步骤列表');
+
+    // 查找所有历史消息容器
+    const chatContainer = document.getElementById('taskChatContainer');
+    if (!chatContainer) return;
+
+    const agentMessages = chatContainer.querySelectorAll('.agent-mode-message');
+    console.log('找到', agentMessages.length, '个历史agent消息容器');
+
+    agentMessages.forEach((messageContainer, index) => {
+        const stepsList = messageContainer.querySelector('#agentStepsList');
+        if (stepsList) {
+            console.log(`恢复第${index + 1}个消息容器的步骤列表`);
+
+            // 清空现有内容
+            stepsList.innerHTML = '';
+
+            // 显示所有步骤（包括已完成的），用于历史消息
+            if (agentSteps.length > 0) {
+                const stepsContainer = stepsList.parentElement;
+                stepsContainer.style.display = 'block';
+
+                agentSteps.forEach((step, stepIndex) => {
+                    const stepElement = createStepElement(step, stepIndex);
+                    stepsList.appendChild(stepElement);
+
+                    // 历史消息中的步骤默认展开，让用户能看到子事件内容
+                    const subEvents = document.getElementById(`subEvents_${step.id}`);
+                    const chevron = document.querySelector(`[data-step-id="${step.id}"] .step-chevron`);
+                    const subContent = document.querySelector(`[data-step-id="${step.id}"] .step-sub-content`);
+
+                    if (subEvents && subContent && step.subEvents && step.subEvents.length > 0) {
+                        // 展开步骤
+                        subEvents.style.display = 'flex';
+                        subContent.style.maxHeight = '1000px';
+                        subContent.style.opacity = '1';
+                        if (chevron) {
+                            chevron.style.transform = 'rotate(180deg)';
+                        }
+                        console.log(`🔄 历史消息中展开步骤 ${step.id}，包含 ${step.subEvents.length} 个子事件`);
+                    }
+                });
+            }
+        }
+    });
 }
 
 

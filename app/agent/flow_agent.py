@@ -42,3 +42,7 @@ class FlowAgent(Manus):
         )
     )
     max_steps: int = 30
+
+    def set_prompt(self, render: dict):
+        """Set the prompt for the agent"""
+        self.next_step_prompt = NEXT_STEP_PROMPT.format(**render)

@@ -166,16 +166,18 @@ class PlanningFlow(BaseFlow):
                 agents_description += (
                     f"- {key.upper()}: {self.agents[key].description}\n"
                 )
-        system_message_content = planning_flow.PLANNING_SYSTEM_PROMPT.format(
-            agents_len=len(self.executor_keys), agents_info=agents_description
-        )
+        system_message_content = planning_flow.PLANNING_SYSTEM_PROMPT
         # logging.info(f"_create_initial_plan prompt:\n{system_message_content}")
         # Create a system message for plan creation
         system_message = Message.system_message(system_message_content)
 
         # Create a user message with the request
         user_message = Message.user_message(
-            f"Create a reasonable plan with clear steps to accomplish the task: {request}"
+            planning_flow.PLANNING_USER_PROMPT.format(
+                request=request,
+                agents_info=agents_description,
+                agents_len=len(self.executor_keys),
+            )
         )
 
         # Call LLM with PlanningTool
@@ -294,9 +296,15 @@ class PlanningFlow(BaseFlow):
         plan_step = await self._get_plan_step()
         plan = await self._get_plan()
         # Create a prompt for the agent to execute the current step
-        step_prompt = (
-            precede_step_result if precede_step_result else self._format_plan_step(plan)
+        step_prompt = self._format_plan_step(plan)
+        executor.set_prompt(
+            {
+                "context": precede_step_result,
+                "request": step_prompt,
+                "directory": config.workspace_root,
+            }
         )
+        logging.info(f"Step prompt: {step_prompt}, context: {precede_step_result}")
 
         # Use agent.run() to execute the step
         try:

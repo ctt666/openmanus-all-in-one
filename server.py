@@ -539,7 +539,7 @@ async def create_task(request_data: dict = Body(...)):
     if not prompt:
         raise HTTPException(status_code=400, detail="Prompt is required")
 
-    if task_id and task_manager.tasks[task_id].status == "running":
+    if task_id and task_id in task_manager.tasks:
         success = await task_manager.handle_interaction(task_id, prompt)
         if not success:
             raise HTTPException(status_code=404, detail="Task not found")
@@ -566,6 +566,12 @@ async def run_task(
         agent = Manus(
             name="Manus",
             description="A versatile agent that can solve various tools using multiple tools",
+        )
+        agent.set_prompt(
+            {
+                "request": prompt,
+                "directory": config.workspace_root,
+            }
         )
 
         async def on_think(thought):
@@ -805,7 +811,7 @@ async def run_flow_task(
         flow_manager.register_running_flow(flow_id, current_task)
 
         # 组装 agents 与 flow
-        agents = {"flow": await FlowAgent().create()}
+        agents = {"Flow": await FlowAgent().create()}
 
         flow = FlowFactory.create_flow(flow_type=FlowType.PLANNING, agents=agents)
 
@@ -940,9 +946,9 @@ async def run_flow_task(
                 if "INTERACTION_REQUIRED:" in result:
                     # 提取INTERACTION_REQUIRED之前的内容作为上下文
                     before_interaction = result.split("INTERACTION_REQUIRED:")[
-                        0
+                        1
                     ].strip()
-                    continue_prompt = f"User response: {user_response}\n\nPrevious context: {before_interaction}\n\nPlease continue with the task based on the user's response."
+                    continue_prompt = f"Ask Human: {before_interaction}\nUser response: {user_response}"
                 else:
                     # 如果没有INTERACTION_REQUIRED标记，使用默认提示
                     continue_prompt = f"User response: {user_response}\nPlease continue with the task."

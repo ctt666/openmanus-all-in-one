@@ -53,23 +53,28 @@ class Manus(ToolCallAgent):
     )  # server_id -> url/command
     _initialized: bool = False
 
-    async def run(self, request: Optional[str] = None) -> str:
-        """Run the agent with the given request.
+    def set_prompt(self, render: dict):
+        """Set the prompt for the agent"""
+        self.next_step_prompt = NEXT_STEP_PROMPT.format(**render)
+        self.system_prompt = SYSTEM_PROMPT.format(**render)
 
-        Args:
-            request: The user's request to process.
+    # async def run(self, request: Optional[str] = None) -> str:
+    #     """Run the agent with the given request.
 
-        Returns:
-            A string summarizing the execution results.
+    #     Args:
+    #         request: The user's request to process.
 
-        Raises:
-            RuntimeError: If the agent is not in IDLE state at start.
-        """
+    #     Returns:
+    #         A string summarizing the execution results.
 
-        # 设置系统提示词和下一步提示词
-        self.system_prompt = SYSTEM_PROMPT.format(directory=config.workspace_root)
-        self.next_step_prompt = NEXT_STEP_PROMPT.format(request=request)
-        return await super().run(request)
+    #     Raises:
+    #         RuntimeError: If the agent is not in IDLE state at start.
+    #     """
+
+    #     # 设置系统提示词和下一步提示词
+    #     self.system_prompt = SYSTEM_PROMPT.format(directory=config.workspace_root)
+    #     self.next_step_prompt = NEXT_STEP_PROMPT.format(request=request)
+    #     return await super().run(request)
 
     @model_validator(mode="after")
     def initialize_helper(self) -> "Manus":

@@ -47,6 +47,11 @@ class BaseAgent(BaseModel, ABC):
         arbitrary_types_allowed = True
         extra = "allow"  # Allow extra fields for flexibility in subclasses
 
+    @abstractmethod
+    def set_prompt(self, render: dict):
+        """Set the prompt for the agent"""
+        pass
+
     @model_validator(mode="after")
     def initialize_agent(self) -> "BaseAgent":
         """Initialize agent with default settings if not provided."""
@@ -116,8 +121,8 @@ class BaseAgent(BaseModel, ABC):
 
     async def run(self, request: Optional[str] = None) -> str:
         """运行代理的主要执行循环"""
-        if request:
-            self.memory.add_message(Message.user_message(request))
+        # if request:
+        #     self.memory.add_message(Message.user_message(request))
 
         step = 0
         consecutive_duplicates = 0
