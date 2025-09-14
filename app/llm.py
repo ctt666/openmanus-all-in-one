@@ -443,6 +443,7 @@ class LLM:
             params = {
                 "model": self.model,
                 "messages": messages,
+                "presence_penalty": 1.5,
             }
 
             if self.model in REASONING_MODELS:
@@ -716,7 +717,7 @@ class LLM:
         system_msgs: Optional[List[Union[dict, Message]]] = None,
         timeout: int = 300,
         tools: Optional[List[dict]] = None,
-        tool_choice: TOOL_CHOICE_TYPE = ToolChoice.AUTO,  # type: ignore
+        tool_choice: str = ToolChoice.AUTO.value,  # type: ignore
         temperature: Optional[float] = None,
         **kwargs,
     ) -> ChatCompletionMessage | None:
@@ -742,10 +743,6 @@ class LLM:
             Exception: For unexpected errors
         """
         try:
-            # Validate tool_choice
-            if tool_choice not in TOOL_CHOICE_VALUES:
-                raise ValueError(f"Invalid tool_choice: {tool_choice}")
-
             # Check if the model supports images
             supports_images = self.model in MULTIMODAL_MODELS
 
@@ -771,15 +768,18 @@ class LLM:
                     messages, self.max_input_tokens - tools_tokens
                 )
                 input_tokens = self.count_message_tokens(messages) + tools_tokens
-                logger.debug(f"input tokens after truncate: {input_tokens}")
+                logger.info(f"input tokens after truncate: {input_tokens}")
 
             # Set up the completion request
             params = {
                 "model": self.model,
                 "messages": messages,
                 "tools": tools,
-                "tool_choice": "auto",
+                "tool_choice": tool_choice,
                 "timeout": timeout,
+                "presence_penalty": 2,
+                "top_p": 0.95,
+                "extra_body": {"top_k": 20},
                 **kwargs,
             }
             # logger.info(f"llm request prompt: {messages}")
@@ -792,11 +792,11 @@ class LLM:
                 )
 
             params["stream"] = False  # Always use non-streaming for tool requests
-            logger.debug(f"*****************llm params: {params}")
+            logger.info(f"*****************llm params: {params}")
             response = await self.client.chat.completions.create(
                 **params,
             )
-            # print(f"*****************llm response: {response}")
+
             # Check if response is valid
             if not response.choices or not response.choices[0].message:
                 logger.error(response)
@@ -808,8 +808,8 @@ class LLM:
                 response.usage.prompt_tokens, response.usage.completion_tokens
             )
 
-            logger.debug(
-                f"response content: {response.choices[0].message.content}, tools: {response.choices[0].message.tool_calls}"
+            logger.info(
+                f"response content: {response.choices[0].message.content}, resoning content: {response.choices[0].message.reasoning_content}, tools: {response.choices[0].message.tool_calls}"
             )
             return response.choices[0].message
         except TokenLimitExceeded:

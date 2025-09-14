@@ -3,18 +3,15 @@ You are a planning assistant, who is good at creating a concise, actionable plan
 """
 
 PLANNING_USER_PROMPT = """
-Based on the request "{request}", please use the `planning` tool to create an actionable plan by breaking it down into multiple independent steps that will help achieve the final goal.
+Based on the request "{request}", create an actionable plan.
 
-Available executors:
+### Available executors
 {agents_info}
-Total number of executors: {agents_len}
 
-🚨 CRITICAL RULE:
-1. Use the `planning` tool to create the plan.
-2. Each step must clearly specify the executor,  must be followed by the executor's name in the format '[executor_name]' and without serial number.
-   Example: Gather relevant materials [Flow].
-3. Steps should be clear, actionable, and independent of each other.
-4. Answer in the same language as the '{request}'.
+🚨 MANDATORY REQUIREMENTS - NO EXCEPTIONS:
+- breaking it down into multiple independent steps that will help achieve the final goal.
+- Each step must clearly specify the executor from 'Available executors', eg: Gather relevant materials [Flow].
+- Output with the same language as the '8月中旬我想去澳门旅游5天，帮我做一个攻略，包括旅游景点和入住酒店。入住的酒店我希望交通便利，舒适，最好是星级酒店。'.
 """
 
 STEP_EXECUTE_PROMPT = """
@@ -22,12 +19,7 @@ STEP_EXECUTE_PROMPT = """
 """
 
 FINALIZE_STEP_PROMPT = """
-You are a planning assistant, your task is to summarize the completed plan and save summary file to {workspace}.
+You are a planning assistant, your task is to summarize the completed plan(The output should be semantic fluency and concise, don't output iirelevant text). You can refer to the files in the {workspace} to summarize.
 Here is the final plan status:
 {plan_text}
-
-The summary file could be a document or an image or a video, etc.
-- name the output file with the plan title:
-    - format as markdown(.md) if it's a document.
-    - format as png if it's an image.
 """

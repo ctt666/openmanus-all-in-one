@@ -175,53 +175,78 @@ class PlanningFlow(BaseFlow):
                 agents_len=len(self.executor_keys),
             )
         )
+        print(
+            f"user_message: {planning_flow.PLANNING_USER_PROMPT.format(
+                request=request,
+                agents_info=agents_description,
+                agents_len=len(self.executor_keys),
+            )}"
+        )
 
         # Call LLM with PlanningTool
         response = await self.llm.ask_tool(
             messages=[user_message],
             system_msgs=[system_message],
             tools=[self.planning_tool.to_param()],
-            tool_choice=ToolChoice.AUTO,
+            tool_choice={"type": "function", "function": {"name": "planning"}},
         )
 
         # print(f"create initial plan prompt: {system_message},/n {user_message},/nresponse: {response}")
         # Process tool calls if present
-        if response.tool_calls:
-            for tool_call in response.tool_calls:
-                if tool_call.function.name == "planning":
-                    # Parse the arguments
-                    args = tool_call.function.arguments
-                    if isinstance(args, str):
-                        try:
-                            args = json.loads(args)
-                        except json.JSONDecodeError:
-                            logger.error(f"Failed to parse tool arguments: {args}")
-                            continue
+        max_retries = 3
+        retry_count = 0
 
-                    # Ensure plan_id is set correctly and execute the tool
-                    args["plan_id"] = self.active_plan_id
+        while retry_count < max_retries:
+            if response.tool_calls:
+                print(
+                    f"Tool calls: {[call.function.name for call in response.tool_calls]}"
+                )
+                for tool_call in response.tool_calls:
+                    if tool_call.function.name == "planning":
+                        # Parse the arguments
+                        args = tool_call.function.arguments
+                        if isinstance(args, str):
+                            try:
+                                args = json.loads(args)
+                            except json.JSONDecodeError:
+                                logger.error(f"Failed to parse tool arguments: {args}")
+                                continue
 
-                    # Execute the tool via ToolCollection instead of directly
-                    result = await self.planning_tool.execute(**args)
+                            # Ensure plan_id is set correctly and execute the tool
+                            args["plan_id"] = self.active_plan_id
 
-                    logger.info(
-                        f"Plan creation result: {self._format_plan(result.output)}"
-                    )
-                    return
+                            # Execute the tool via ToolCollection instead of directly
+                            result = await self.planning_tool.execute(**args)
 
-        # If execution reached here, create a default plan
-        logger.warning("Creating default plan")
+                        logger.info(
+                            f"Plan creation result: {self._format_plan(result.output)}"
+                        )
+                        return
+            else:
+                logger.warning(
+                    f"No tool calls returned, retrying... (attempt {retry_count + 1}/{max_retries})"
+                )
+                response = await self.llm.ask_tool(
+                    messages=[user_message],
+                    system_msgs=[system_message],
+                    tools=[self.planning_tool.to_param()],
+                    tool_choice={"type": "function", "function": {"name": "planning"}},
+                )
+                retry_count += 1
 
-        # Create default plan using the ToolCollection
-        await self.planning_tool.execute(
-            **{
-                "command": "create",
-                "plan_id": self.active_plan_id,
-                "title": f"Plan for: {request[:50]}{'...' if len(request) > 50 else ''}",
-                "steps": ["Analyze request", "Execute task", "Verify results"],
-                "request": request,
-            }
-        )
+        # # If execution reached here, create a default plan
+        # logger.warning("Creating default plan")
+
+        # # Create default plan using the ToolCollection
+        # await self.planning_tool.execute(
+        #     **{
+        #         "command": "create",
+        #         "plan_id": self.active_plan_id,
+        #         "title": f"Plan for: {request[:50]}{'...' if len(request) > 50 else ''}",
+        #         "steps": ["Analyze request", "Execute task", "Verify results"],
+        #         "request": request,
+        #     }
+        # )
 
     async def _get_current_step_info(self) -> tuple[Optional[int], Optional[dict]]:
         """
@@ -313,7 +338,7 @@ class PlanningFlow(BaseFlow):
             # 判断是否式因为交互而暂停的
             if results and "INTERACTION_REQUIRED:" not in results:
                 await self._mark_step_completed()
-                await executor.clean_up()
+                await executor.cleanup()
                 logger.info(f"Finish executing step:{plan_step}")
 
             return results
@@ -473,7 +498,7 @@ class PlanningFlow(BaseFlow):
             logger.error(f"Error finalizing plan with agent: {e2}")
             return "Plan completed. Error generating summary."
         finally:
-            await agent.clean_up()
+            await agent.cleanup()
 
     def _format_plan_step(self, plan: Dict):
         """Format a todo step of the plan for display."""

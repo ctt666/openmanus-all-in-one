@@ -28,16 +28,17 @@ class PlanningTool(BaseTool):
                     "update",
                     "list",
                     "get",
-                    "get_step" "set_active",
+                    "get_step",
+                    "set_active",
                     "mark_step",
                     "delete",
                 ],
                 "type": "string",
             },
-            "plan_id": {
-                "description": "Unique identifier for the plan. Required for create, update, set_active, and delete commands. Optional for get and mark_step (uses active plan if not specified).",
-                "type": "string",
-            },
+            # "plan_id": {
+            #     "description": "Unique identifier for the plan. Required for create, update, set_active, and delete commands. Optional for get and mark_step (uses active plan if not specified).",
+            #     "type": "string",
+            # },
             "title": {
                 "description": "Title for the plan. Required for create command, optional for update command.",
                 "type": "string",
@@ -46,23 +47,37 @@ class PlanningTool(BaseTool):
                 "description": "Original user request for the plan. Required for create command",
                 "type": "string",
             },
+            # "step_index": {
+            #     "description": "Index of the step to update (0-based). Required for mark_step command.",
+            #     "type": "integer",
+            # },
+            # "step_status": {
+            #     "description": "Status to set for a step. Used with mark_step command.",
+            #     "enum": ["not_started", "in_progress", "completed", "blocked"],
+            #     "type": "string",
+            # },
+            # "step_notes": {
+            #     "description": "Additional notes for a step. Optional for mark_step command.",
+            #     "type": "string",
+            # },
             "steps": {
-                "description": "List of plan steps. Required for create command, optional for update command.",
+                "description": "List of actionable plan steps. Each step should be a clear, independent action that can be executed. Required for create command, optional for update command. Steps should be ordered logically and specify the executor when applicable (e.g., 'Gather relevant materials [Flow]').",
                 "type": "array",
-                "items": {"type": "string"},
-            },
-            "step_index": {
-                "description": "Index of the step to update (0-based). Required for mark_step command.",
-                "type": "integer",
-            },
-            "step_status": {
-                "description": "Status to set for a step. Used with mark_step command.",
-                "enum": ["not_started", "in_progress", "completed", "blocked"],
-                "type": "string",
-            },
-            "step_notes": {
-                "description": "Additional notes for a step. Optional for mark_step command.",
-                "type": "string",
+                "items": {
+                    "type": "string",
+                    "minLength": 10,
+                    "maxLength": 500,
+                    "pattern": "^[^\\n\\r]+$",  # 不允许换行符
+                    "description": "A single actionable step in the plan. Should be clear, specific, and executable.",
+                },
+                "minItems": 1,
+                "maxItems": 20,
+                "uniqueItems": True,  # 确保步骤不重复
+                "examples": [
+                    "Research and gather information about the topic [Flow]",
+                    "Analyze the collected data and identify key insights [Flow]",
+                    "Create a comprehensive report based on findings [Flow]",
+                ],
             },
         },
         "required": ["command"],

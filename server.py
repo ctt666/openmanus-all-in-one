@@ -563,10 +563,11 @@ async def run_task(
         task = asyncio.current_task()
         task_manager.register_running_task(task_id, task)
 
-        agent = Manus(
-            name="Manus",
-            description="A versatile agent that can solve various tools using multiple tools",
-        )
+        # agent = Manus(
+        #     name="Manus",
+        #     description="A versatile agent that can solve various tools using multiple tools",
+        # )
+        agent = await Manus.create()
         agent.set_prompt(
             {
                 "request": prompt,
@@ -1357,7 +1358,7 @@ def load_config():
 if __name__ == "__main__":
     import uvicorn
 
-    config = load_config()
-    open_with_config = partial(open_local_browser, config)
+    server_config = load_config()
+    open_with_config = partial(open_local_browser, server_config)
     threading.Timer(3, open_with_config).start()
-    uvicorn.run(app, host=config["host"], port=config["port"])
+    uvicorn.run(app, host=server_config["host"], port=server_config["port"])

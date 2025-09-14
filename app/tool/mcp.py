@@ -70,7 +70,11 @@ class MCPClients(ToolCollection):
         await self._initialize_and_list_tools(server_id)
 
     async def connect_stdio(
-        self, command: str, args: List[str], server_id: str = "", env: Dict[str, str] = {}
+        self,
+        command: str,
+        args: List[str],
+        server_id: str = "",
+        env: Dict[str, str] = {},
     ) -> None:
         """Connect to an MCP server using stdio transport."""
         if not command:
@@ -171,9 +175,11 @@ class MCPClients(ToolCollection):
                                     f"Cancel scope error during disconnect from {server_id}, continuing with cleanup: {e}"
                                 )
                             else:
-                                logger.warning(
-                                    f"close session error: {e}"
-                                )
+                                logger.warning(f"close session error: {e}")
+                        except Exception as e:
+                            logger.warning(
+                                f"Unexpected error during exit stack cleanup for {server_id}: {e}"
+                            )
 
                     # Clean up references
                     self.sessions.pop(server_id, None)
@@ -193,8 +199,10 @@ class MCPClients(ToolCollection):
             # Disconnect from all servers in a deterministic order
             session_list = list(reversed(self.sessions.keys()))
             for sid in session_list:
-                await self.disconnect(sid)
+                try:
+                    await self.disconnect(sid)
+                except Exception as e:
+                    logger.warning(f"Error disconnecting from server {sid}: {e}")
             self.tool_map = {}
             self.tools = tuple()
             logger.info("Disconnected from all MCP servers")
-

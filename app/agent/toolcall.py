@@ -26,7 +26,7 @@ class ToolCallAgent(ReActAgent):
     available_tools: ToolCollection = ToolCollection(
         CreateChatCompletion(), Terminate()
     )
-    tool_choices: TOOL_CHOICE_TYPE = ToolChoice.AUTO  # type: ignore
+    tool_choices: TOOL_CHOICE_TYPE = ToolChoice.AUTO.value  # type: ignore
     special_tool_names: List[str] = Field(default_factory=lambda: [Terminate().name])
 
     tool_calls: List[ToolCall] = Field(default_factory=list)
@@ -110,12 +110,12 @@ class ToolCallAgent(ReActAgent):
                 return False, ""
 
             # Create and add assistant message
-            assistant_msg = (
-                Message.from_tool_calls(content=content, tool_calls=self.tool_calls)
-                if self.tool_calls
-                else Message.assistant_message(content)
-            )
-            self.memory.add_message(assistant_msg)
+            # assistant_msg = (
+            #     Message.from_tool_calls(content=content, tool_calls=self.tool_calls)
+            #     if self.tool_calls
+            #     else Message.assistant_message(content)
+            # )
+            # self.memory.add_message(assistant_msg)
 
             if self.tool_choices == ToolChoice.REQUIRED and not self.tool_calls:
                 return True, content  # Will be handled in act()
@@ -163,13 +163,12 @@ class ToolCallAgent(ReActAgent):
             )
 
             # Add tool response to memory
-            # tool_msg = Message.tool_message(
-            #     content=result,
-            #     tool_call_id=command.id,
-            #     name=command.function.name,
-            #     base64_image=self._current_base64_image,
-            # )
-            # self.memory.add_message(tool_msg)
+            tool_msg = Message.tool_message(
+                content=result,
+                name=command.function.name,
+                arguments=command.function.arguments,
+            )
+            self.memory.add_message(tool_msg)
             results.append(result)
 
         return "\n\n".join(results)

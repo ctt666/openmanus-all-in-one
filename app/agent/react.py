@@ -4,6 +4,7 @@ from typing import Optional
 from pydantic import Field
 
 from app.agent.base import BaseAgent
+from app.config import config
 from app.llm import LLM
 from app.logger import logger
 from app.prompt.react import SUMMARIZE_PROMPT
@@ -42,8 +43,10 @@ class ReActAgent(BaseAgent, ABC):
         return f"{thought}\n{act_result}"
 
     async def summarize(self, request: str) -> str:
-        self.summarize_prompt = self.summarize_prompt.format(request=request)
-        user_msg = Message.user_message(self.summarize_prompt)
+        summarize_prompt = self.summarize_prompt.format(
+            request=request, directory=config.workspace_root
+        )
+        user_msg = Message.user_message(summarize_prompt)
         self.messages += [user_msg]
 
         try:
